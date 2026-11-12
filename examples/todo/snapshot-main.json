@@ -1,0 +1,79 @@
+{
+  "format": "softrep/0.1",
+  "app": { "name": "Tasks", "kind": "web", "source": "examples/todo/app.html" },
+  "seq": 14,
+  "focus": "new_title",
+  "modal": null,
+
+  "ui": {
+    "id": "root", "role": "window", "title": "Tasks",
+    "children": [
+      {
+        "id": "add_form", "role": "form",
+        "children": [
+          {
+            "id": "new_title", "role": "textbox", "label": "New task",
+            "placeholder": "What needs doing?",
+            "value": "buy milk",
+            "invalid": "You already have that task.",
+            "constraints": { "max_length": 120, "trim": true, "not_empty": true, "unique": "tasks.title, case-insensitive" },
+            "actions": ["type", "clear", "submit"]
+          },
+          {
+            "id": "add", "role": "button", "label": "Add",
+            "enabled": true,
+            "actions": { "press": { "does": "validate new_title, then append it to tasks and clear new_title" } }
+          }
+        ]
+      },
+      {
+        "id": "tasks", "role": "list", "label": "Tasks",
+        "shown": 2, "total": 4, "limited_by": "filter",
+        "item": {
+          "fields": { "title": "string", "done": "boolean" },
+          "actions": {
+            "toggle": { "does": "flip done" },
+            "rename": {
+              "args": { "title": "string, max 120; empty reverts" },
+              "ui_hint": "double-click the title, type, Enter (Esc cancels)"
+            },
+            "delete": { "undo_window_ms": 6000, "confirm": false }
+          }
+        },
+        "items": [
+          { "id": "task:3", "title": "Book dentist appointment", "done": false },
+          { "id": "task:4", "title": "Water plants", "done": false }
+        ]
+      },
+      {
+        "id": "footer", "role": "toolbar",
+        "children": [
+          { "id": "items_left", "role": "text", "text": "2 items left" },
+          {
+            "id": "filter", "role": "choice", "label": "Filter",
+            "value": "active", "options": ["all", "active", "done"],
+            "actions": ["select"]
+          },
+          {
+            "id": "clear_done", "role": "button", "label": "Clear done",
+            "enabled": true,
+            "actions": { "press": { "does": "delete every done task (2 now, including hidden ones)", "confirm": "dialog", "undo_window_ms": 6000 } }
+          }
+        ]
+      }
+    ]
+  },
+
+  "overlays": [
+    {
+      "id": "toast", "role": "status",
+      "text": "Deleted \"Call mom\"",
+      "expires_in_ms": 4100,
+      "children": [
+        { "id": "undo", "role": "button", "label": "Undo", "actions": { "press": { "does": "restore \"Call mom\" at its old position" } } }
+      ]
+    }
+  ],
+
+  "persistence": { "saved": true, "where": "browser localStorage" }
+}

@@ -1,0 +1,27 @@
+{
+  "format": "softrep/0.1",
+  "app": { "name": "Tasks", "kind": "web", "source": "examples/todo/app.html" },
+  "seq": 21,
+  "focus": "confirm_cancel",
+  "modal": "confirm",
+
+  "ui": {
+    "id": "root", "role": "window", "title": "Tasks",
+    "inert": true,
+    "summary": "Task list behind the dialog: 4 tasks, 2 done, filter=all. Not interactive until the dialog closes.",
+    "expand": "ui"
+  },
+
+  "overlays": [
+    {
+      "id": "confirm", "role": "dialog", "blocking": true,
+      "text": "Delete 2 completed tasks?",
+      "affects": ["task:1", "task:2"],
+      "children": [
+        { "id": "confirm_cancel", "role": "button", "label": "Cancel", "actions": { "press": { "does": "close dialog, change nothing" } } },
+        { "id": "confirm_ok", "role": "button", "label": "Delete", "danger": true, "actions": { "press": { "does": "delete task:1 and task:2", "undo_window_ms": 6000 } } }
+      ],
+      "dismiss": { "key": "Escape", "same_as": "confirm_cancel" }
+    }
+  ]
+}

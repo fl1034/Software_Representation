@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tasks</title>
+<style>
+  :root {
+    --bg: #f6f5f2; --panel: #ffffff; --text: #1d1d1b; --muted: #77756f;
+    --border: #e2e0da; --accent: #2f6fdb; --danger: #c43d3d; --done: #a3a19b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161615; --panel: #1f1f1d; --text: #ecebe7; --muted: #9a988f;
+      --border: #33322f; --accent: #6a9cf0; --danger: #e06a6a; --done: #6b6a65;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { max-width: 520px; margin: 48px auto; padding: 0 16px; }
+  h1 { font-size: 22px; margin: 0 0 16px; font-weight: 650; }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; }
+
+  form.add { display: flex; gap: 8px; padding: 12px; border-bottom: 1px solid var(--border); }
+  form.add input {
+    flex: 1; min-width: 0; padding: 8px 10px; font: inherit; color: inherit;
+    background: transparent; border: 1px solid var(--border); border-radius: 6px;
+  }
+  form.add input[aria-invalid="true"] { border-color: var(--danger); }
+  .error { color: var(--danger); font-size: 13px; padding: 0 12px 10px; margin-top: -4px; }
+  .error[hidden] { display: none; }
+
+  button {
+    font: inherit; padding: 7px 12px; border-radius: 6px; cursor: pointer;
+    border: 1px solid var(--border); background: transparent; color: inherit;
+  }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.icon { border: none; padding: 4px 8px; color: var(--muted); }
+  button.icon:hover { color: var(--danger); }
+
+  ul { list-style: none; margin: 0; padding: 0; }
+  li { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 1px solid var(--border); }
+  li .title { flex: 1; min-width: 0; overflow-wrap: anywhere; cursor: text; }
+  li.done .title { text-decoration: line-through; color: var(--done); }
+  li input.edit { flex: 1; font: inherit; color: inherit; background: transparent; padding: 4px 6px;
+    border: 1px solid var(--accent); border-radius: 4px; }
+  .empty { padding: 20px 12px; color: var(--muted); text-align: center; }
+
+  footer { display: flex; align-items: center; gap: 8px; padding: 10px 12px; flex-wrap: wrap; font-size: 13px; }
+  footer .count { color: var(--muted); margin-right: auto; }
+  .filters button { padding: 4px 9px; border-color: transparent; }
+  .filters button[aria-pressed="true"] { border-color: var(--border); font-weight: 600; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+    background: var(--text); color: var(--bg); padding: 8px 14px; border-radius: 8px;
+    display: flex; gap: 12px; align-items: center; font-size: 14px;
+  }
+  .toast[hidden] { display: none; }
+  .toast button { color: var(--bg); border-color: transparent; text-decoration: underline; padding: 2px 4px; }
+
+  dialog { border: 1px solid var(--border); border-radius: 10px; background: var(--panel); color: var(--text); padding: 20px; max-width: 340px; }
+  dialog::backdrop { background: rgb(0 0 0 / .35); }
+  dialog p { margin: 0 0 16px; }
+  dialog .row { display: flex; justify-content: flex-end; gap: 8px; }
+  button.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Tasks</h1>
+  <div class="panel">
+    <form class="add" id="add-form" novalidate>
+      <input id="new-title" placeholder="What needs doing?" maxlength="120" autocomplete="off" aria-describedby="new-error">
+      <button class="primary" id="add-btn" type="submit" disabled>Add</button>
+    </form>
+    <div class="error" id="new-error" hidden></div>
+    <ul id="list"></ul>
+    <div class="empty" id="empty" hidden></div>
+    <footer>
+      <span class="count" id="count"></span>
+      <div class="filters" role="group" aria-label="Filter">
+        <button data-filter="all" aria-pressed="true">All</button>
+        <button data-filter="active" aria-pressed="false">Active</button>
+        <button data-filter="done" aria-pressed="false">Done</button>
+      </div>
+      <button id="clear-done">Clear done</button>
+    </footer>
+  </div>
+</main>
+
+<div class="toast" id="toast" role="status" hidden>
+  <span id="toast-msg"></span><button id="undo">Undo</button>
+</div>
+
+<dialog id="confirm">
+  <p id="confirm-msg"></p>
+  <div class="row">
+    <button id="confirm-cancel">Cancel</button>
+    <button class="danger" id="confirm-ok">Delete</button>
+  </div>
+</dialog>
+
+<script>
+const STORAGE_KEY = "tasks.v1";
+let tasks = load() ?? [
+  { id: 1, title: "Buy milk", done: false },
+  { id: 2, title: "Email the landlord about the radiator", done: true },
+  { id: 3, title: "Book dentist appointment", done: false },
+];
+let nextId = Math.max(0, ...tasks.map(t => t.id)) + 1;
+let filter = "all";
+let editingId = null;
+let lastDeleted = null;     // { tasks: [...], indices: [...] } for undo
+let toastTimer = null;
+
+const $ = id => document.getElementById(id);
+const input = $("new-title"), addBtn = $("add-btn"), err = $("new-error");
+
+function load() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch { return null; } }
+function save() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); } catch {} }
+
+function validate(title) {
+  const t = title.trim();
+  if (!t) return "Title can't be empty.";
+  if (tasks.some(x => x.title.toLowerCase() === t.toLowerCase())) return "You already have that task.";
+  return null;
+}
+
+input.addEventListener("input", () => {
+  addBtn.disabled = input.value.trim() === "";
+  err.hidden = true; input.removeAttribute("aria-invalid");
+});
+
+$("add-form").addEventListener("submit", e => {
+  e.preventDefault();
+  const problem = validate(input.value);
+  if (problem) { err.textContent = problem; err.hidden = false; input.setAttribute("aria-invalid", "true"); return; }
+  tasks.push({ id: nextId++, title: input.value.trim(), done: false });
+  input.value = ""; addBtn.disabled = true;
+  save(); render();
+});
+
+document.querySelectorAll(".filters button").forEach(b => b.addEventListener("click", () => {
+  filter = b.dataset.filter;
+  document.querySelectorAll(".filters button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  render();
+}));
+
+$("clear-done").addEventListener("click", () => {
+  const n = tasks.filter(t => t.done).length;
+  confirmThen(`Delete ${n} completed task${n === 1 ? "" : "s"}?`, () => removeTasks(tasks.filter(t => t.done)));
+});
+
+function confirmThen(msg, onOk) {
+  const d = $("confirm");
+  $("confirm-msg").textContent = msg;
+  $("confirm-ok").onclick = () => { d.close(); onOk(); };
+  $("confirm-cancel").onclick = () => d.close();
+  d.showModal();
+}
+
+function removeTasks(victims) {
+  const ids = new Set(victims.map(t => t.id));
+  lastDeleted = { tasks: victims, indices: victims.map(v => tasks.indexOf(v)) };
+  tasks = tasks.filter(t => !ids.has(t.id));
+  save(); render();
+  showToast(victims.length === 1 ? `Deleted "${victims[0].title}"` : `Deleted ${victims.length} tasks`);
+}
+
+function showToast(msg) {
+  $("toast-msg").textContent = msg; $("toast").hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { $("toast").hidden = true; lastDeleted = null; }, 6000);
+}
+
+$("undo").addEventListener("click", () => {
+  if (!lastDeleted) return;
+  lastDeleted.tasks.forEach((t, i) => tasks.splice(Math.min(lastDeleted.indices[i], tasks.length), 0, t));
+  lastDeleted = null; $("toast").hidden = true; clearTimeout(toastTimer);
+  save(); render();
+});
+
+function render() {
+  const list = $("list");
+  list.innerHTML = "";
+  const visible = tasks.filter(t => filter === "all" || (filter === "done") === t.done);
+  for (const t of visible) {
+    const li = document.createElement("li");
+    li.className = t.done ? "done" : "";
+    const cb = document.createElement("input");
+    cb.type = "checkbox"; cb.checked = t.done; cb.setAttribute("aria-label", `Mark "${t.title}" done`);
+    cb.addEventListener("change", () => { t.done = cb.checked; save(); render(); });
+    li.append(cb);
+
+    if (editingId === t.id) {
+      const ed = document.createElement("input");
+      ed.className = "edit"; ed.value = t.title; ed.maxLength = 120;
+      const commit = () => {
+        if (editingId !== t.id) return;
+        const v = ed.value.trim();
+        if (v) t.title = v;          // empty edit silently reverts
+        editingId = null; save(); render();
+      };
+      ed.addEventListener("keydown", e => {
+        if (e.key === "Enter") commit();
+        if (e.key === "Escape") { editingId = null; render(); }
+      });
+      ed.addEventListener("blur", commit);
+      li.append(ed);
+      queueMicrotask(() => { ed.focus(); ed.select(); });
+    } else {
+      const span = document.createElement("span");
+      span.className = "title"; span.textContent = t.title; span.title = "Double-click to edit";
+      span.addEventListener("dblclick", () => { editingId = t.id; render(); });
+      li.append(span);
+    }
+
+    const del = document.createElement("button");
+    del.className = "icon"; del.textContent = "✕"; del.setAttribute("aria-label", `Delete "${t.title}"`);
+    del.addEventListener("click", () => removeTasks([t]));
+    li.append(del);
+    list.append(li);
+  }
+
+  const empty = $("empty");
+  empty.hidden = visible.length > 0;
+  empty.textContent = tasks.length === 0 ? "Nothing to do. Nice." : `No ${filter} tasks.`;
+
+  const left = tasks.filter(t => !t.done).length;
+  $("count").textContent = `${left} item${left === 1 ? "" : "s"} left`;
+  $("clear-done").disabled = !tasks.some(t => t.done);
+}
+
+render();
+</script>
+</body>
+</html>

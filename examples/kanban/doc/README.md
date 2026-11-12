@@ -1,0 +1,21 @@
+# Sprint Board
+
+You see the app as a JSON tree. Start with `observe` on `/` (see `observe.md`).
+
+**Acting.** A node with `"api": [...]` lists what you can do to it. The doc for an
+action is at `doc/<node path>/<action>.md`, with ids replaced by `_` (actions on the root: `doc/<action>.md`):
+the doc for `rename` on `/cards/k4` is `doc/cards/_/rename.md`.
+A `"*"` key describes every child of its node; it is not a child itself.
+
+**Calls** are JSON: `{"action": "<action>", "path": "<node path>", ...arguments}`.
+Add `"version": <n>` to any call to have it refused with `stale` if the
+board has changed since version n.
+
+**Replies:**
+- Success: `{"ok": true, "version": <n>, "changes": [...]}`. Each change is
+  `{"op": "add" | "set" | "remove", "path": "<path>", "value": <value>}`, without
+  `value` for `remove`. Apply them to your copy of the tree.
+- Failure: `{"ok": false, "error": "<code>", "message": "<explanation>"}`.
+
+Any call can fail with `unknown_action`, `bad_args`, `not_found` or `stale`.
+Each action's doc lists its other errors.

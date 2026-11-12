@@ -1,41 +1,41 @@
 [
   {
-    "note": "Task given to the agent: \"The login bug is fixed. Tick off the fix, send it to review and tell Priya.\" Starts from representation.json.",
-    "call":  { "action": "set_done", "path": "/cards/k4/checklist/k4-i2", "done": true },
-    "reply": { "ok": true, "changes": [{ "op": "set", "path": "/cards/k4/checklist/k4-i2/done", "value": true }] }
+    "note": "Task given to the agent: \"The login bug is fixed. Tick off the fix, send it to review and tell Priya.\" First look at the whole board. /cards is over the 2 KB budget for this reply, so it comes back folded.",
+    "call": {"action": "observe", "path": "/"},
+    "reply": {"ok": true, "version": 37, "path": "/", "node": {"app": "Sprint Board", "version": 37, "docs": "doc/README.md", "api": ["observe"], "today": "2026-11-12", "me": "u1", "members": {"u1": {"name": "You"}, "u2": {"name": "Priya Shah"}, "u3": {"name": "Sam Ortiz"}}, "labels": {"l1": {"name": "Bug"}, "l2": {"name": "Feature"}, "l3": {"name": "Design"}, "l4": {"name": "Chore"}}, "columns": {"path": "/columns", "api": ["add"], "*": {"path": "/columns/<column id>", "api": ["rename", "set_limit", "delete", "add_card"]}, "c1": {"name": "Backlog", "limit": null, "cards": ["k1", "k2", "k3"]}, "c2": {"name": "In progress", "limit": 3, "cards": ["k4", "k5", "k6"]}, "c3": {"name": "Review", "limit": 2, "cards": ["k7"]}, "c4": {"name": "Done", "limit": null, "cards": ["k8"]}}, "cards": {"folded": "9 children, 1.8 KB. Observe /cards"}}}
   },
   {
-    "call":  { "action": "move", "path": "/cards/k4", "column": "c3" },
-    "reply": { "ok": true, "changes": [
-      { "op": "set", "path": "/columns/c2/cards", "value": ["k5", "k6"] },
-      { "op": "set", "path": "/columns/c3/cards", "value": ["k7", "k4"] }
-    ] }
+    "note": "Unfold just the card that matters.",
+    "call": {"action": "observe", "path": "/cards/k4"},
+    "reply": {"ok": true, "version": 37, "path": "/cards/k4", "node": {"title": "Login fails with + in email", "labels": ["l1"], "assignee": "u2", "due": "2026-11-10", "overdue": true, "description": "Reported by two customers. Repro: sign up with a+b@example.com, then log in.", "checklist": {"k4-i1": {"text": "Reproduce locally", "done": true}, "k4-i2": {"text": "Fix email normalisation", "done": false}, "k4-i3": {"text": "Add regression test", "done": false}}, "comments": {"k4-m4": {"author": "u2", "text": "Found it: we URL-decode the address twice.", "at": "2026-11-11"}}}}
   },
   {
-    "call":  { "action": "comment", "path": "/cards/k4", "text": "Fixed and in review. Regression test still to do." },
-    "reply": { "ok": true, "changes": [{ "op": "add", "path": "/cards/k4/comments/k4-m21", "value": { "author": "u1", "text": "Fixed and in review. Regression test still to do.", "at": "2026-11-12" } }] }
+    "note": "The agent reads doc/cards/_/checklist/_/set_done.md (8 lines), then acts. Passing version 37 means: refuse if the board changed since I looked.",
+    "call": {"action": "set_done", "path": "/cards/k4/checklist/k4-i2", "done": true, "version": 37},
+    "reply": {"ok": true, "version": 38, "changes": [{"op": "set", "path": "/cards/k4/checklist/k4-i2/done", "value": true}]}
   },
   {
-    "note": "Review now holds 2 cards, its limit. Another move into it is refused.",
-    "call":  { "action": "move", "path": "/cards/k6", "column": "c3" },
-    "reply": { "ok": false, "error": "column_full", "message": "Review is at its limit of 2 cards (k7, k4)." }
+    "note": "Reads doc/cards/_/move.md.",
+    "call": {"action": "move", "path": "/cards/k4", "column": "c3", "version": 38},
+    "reply": {"ok": true, "version": 39, "changes": [{"op": "set", "path": "/columns/c2/cards", "value": ["k5", "k6"]}, {"op": "set", "path": "/columns/c3/cards", "value": ["k7", "k4"]}]}
   },
   {
-    "note": "Reorder within a column: put k3 at the top of Backlog.",
-    "call":  { "action": "move", "path": "/cards/k3", "column": "c1", "position": 0 },
-    "reply": { "ok": true, "changes": [{ "op": "set", "path": "/columns/c1/cards", "value": ["k3", "k1", "k2"] }] }
+    "note": "Reads doc/cards/_/comment.md.",
+    "call": {"action": "comment", "path": "/cards/k4", "text": "Fixed and in review. Regression test still to do.", "version": 39},
+    "reply": {"ok": true, "version": 40, "changes": [{"op": "add", "path": "/cards/k4/comments/k4-m21", "value": {"author": "u1", "text": "Fixed and in review. Regression test still to do.", "at": "2026-11-12"}}]}
   },
   {
-    "note": "Bring back an archived card. It returns to the column it came from.",
-    "call":  { "action": "restore", "path": "/cards/k9" },
-    "reply": { "ok": true, "changes": [
-      { "op": "set", "path": "/cards/k9/archived", "value": false },
-      { "op": "set", "path": "/columns/c1/cards", "value": ["k3", "k1", "k2", "k9"] }
-    ] }
+    "note": "Review is now at its limit of 2.",
+    "call": {"action": "move", "path": "/cards/k6", "column": "c3"},
+    "reply": {"ok": false, "error": "column_full", "message": "Review is at its limit of 2 cards (k7, k4)."}
   },
   {
-    "note": "Assign to someone who isn't on the board.",
-    "call":  { "action": "assign", "path": "/cards/k1", "assignee": "u7" },
-    "reply": { "ok": false, "error": "unknown_member", "message": "No member u7. Members: u1, u2, u3." }
+    "note": "Someone else changed the board meanwhile (version 41). A call based on version 40 is refused; the agent re-observes what it needs and tries again.",
+    "call": {"action": "rename", "path": "/cards/k6", "title": "Rate-limit the public API (v2)", "version": 40},
+    "reply": {"ok": false, "error": "stale", "message": "The board is at version 41, not 40. Observe again before acting."}
+  },
+  {
+    "call": {"action": "assign", "path": "/cards/k1", "assignee": "u7"},
+    "reply": {"ok": false, "error": "unknown_member", "message": "No member u7. Members: u1, u2, u3."}
   }
 ]

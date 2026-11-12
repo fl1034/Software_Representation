@@ -1,0 +1,17 @@
+{
+  "app": "Tasks",
+  "version": 12,
+  "docs": "doc/README.md",
+  "api": ["observe"],
+  "tasks": {
+    "path": "/tasks",
+    "api": ["add", "clear_done", "undo"],
+    "*": {
+      "path": "/tasks/<task id>",
+      "api": ["rename", "set_done", "delete"]
+    },
+    "1": { "title": "Buy milk", "done": true },
+    "2": { "title": "Email the landlord about the radiator", "done": true },
+    "3": { "title": "Book dentist appointment", "done": false }
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "app": "Tasks",
+  "reply": {
+    "ok":    { "ok": true, "changes": ["<{ \"op\": \"add\" | \"set\" | \"remove\", \"path\": \"<path>\", \"value\": <new value, omitted for remove> }>"] },
+    "error": { "ok": false, "error": "<code>", "message": "<text for the agent>" },
+    "errors_any_call": ["unknown_action", "bad_args", "not_found"]
+  },
+  "tasks": {
+    "path": "/tasks",
+    "api": {
+      "add": {
+        "call":   { "action": "add", "path": "/tasks", "title": "<string: non-empty, ≤120 chars, unique ignoring case>" },
+        "reply":  { "ok": true, "changes": [{ "op": "add", "path": "/tasks/items/<new task id>", "value": { "title": "<title>", "done": false } }] },
+        "errors": ["empty_title", "title_too_long", "duplicate_title"]
+      },
+      "clear_done": {
+        "call":   { "action": "clear_done", "path": "/tasks" },
+        "reply":  { "ok": true, "changes": ["<{ \"op\": \"remove\", \"path\": \"/tasks/items/<task id>\" }, one per done task>"] },
+        "errors": ["nothing_done"]
+      },
+      "undo": {
+        "call":   { "action": "undo", "path": "/tasks" },
+        "reply":  { "ok": true, "changes": ["<{ \"op\": \"add\", \"path\": \"/tasks/items/<task id>\", \"value\": <task> }, one per restored task, back in its old position>"] },
+        "errors": ["nothing_to_undo", "undo_expired: only within 6 s of the last delete or clear_done"]
+      }
+    },
+    "items": {
+      "path": "/tasks/items/<task id>",
+      "api": {
+        "rename": {
+          "call":   { "action": "rename", "path": "/tasks/items/<task id>", "title": "<string: same rules as add>" },
+          "reply":  { "ok": true, "changes": [{ "op": "set", "path": "/tasks/items/<task id>/title", "value": "<title>" }] },
+          "errors": ["empty_title", "title_too_long", "duplicate_title"]
+        },
+        "set_done": {
+          "call":   { "action": "set_done", "path": "/tasks/items/<task id>", "done": "<true | false>" },
+          "reply":  { "ok": true, "changes": [{ "op": "set", "path": "/tasks/items/<task id>/done", "value": "<done>" }] },
+          "errors": []
+        },
+        "delete": {
+          "call":   { "action": "delete", "path": "/tasks/items/<task id>" },
+          "reply":  { "ok": true, "changes": [{ "op": "remove", "path": "/tasks/items/<task id>" }] },
+          "errors": []
+        }
+      },
+      "1": { "title": "Buy milk", "done": true },
+      "2": { "title": "Email the landlord about the radiator", "done": true },
+      "3": { "title": "Book dentist appointment", "done": false }
+    }
+  }
+}

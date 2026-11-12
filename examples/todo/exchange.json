@@ -1,33 +1,39 @@
-{
-  "comment": "One round trip, starting from snapshot-main.json (seq 14). The agent renames a task; the app answers with a diff, not a new snapshot.",
-
-  "request": {
-    "seq": 14,
-    "target": "task:3",
-    "action": "rename",
-    "args": { "title": "Book dentist for Tuesday" }
+[
+  {
+    "note": "Mark the dentist task done.",
+    "call":  { "action": "set_done", "path": "/tasks/items/3", "done": true },
+    "reply": { "ok": true, "changes": [{ "op": "set", "path": "/tasks/items/3/done", "value": true }] }
   },
-
-  "response": {
-    "ok": true,
-    "seq": 15,
-    "changes": [
-      { "op": "set", "id": "task:3", "field": "title", "value": "Book dentist for Tuesday" },
-      { "op": "set", "id": "toast", "field": "expires_in_ms", "value": 2300 }
-    ]
+  {
+    "note": "Add a task.",
+    "call":  { "action": "add", "path": "/tasks", "title": "Water plants" },
+    "reply": { "ok": true, "changes": [{ "op": "add", "path": "/tasks/items/4", "value": { "title": "Water plants", "done": false } }] }
   },
-
-  "failure_example": {
-    "request": { "seq": 15, "target": "add", "action": "press" },
-    "response": {
-      "ok": false,
-      "seq": 15,
-      "error": { "code": "invalid", "on": "new_title", "message": "You already have that task.", "conflicts_with": "task:1" }
-    }
+  {
+    "note": "Duplicate title, rejected.",
+    "call":  { "action": "add", "path": "/tasks", "title": "buy MILK" },
+    "reply": { "ok": false, "error": "duplicate_title", "message": "\"Buy milk\" already exists at /tasks/items/1." }
   },
-
-  "stale_example": {
-    "request": { "seq": 12, "target": "task:3", "action": "toggle" },
-    "response": { "ok": false, "seq": 15, "error": { "code": "stale", "message": "State changed since seq 12; re-read or apply the diff first." } }
+  {
+    "note": "Delete every done task, then take it back.",
+    "call":  { "action": "clear_done", "path": "/tasks" },
+    "reply": { "ok": true, "changes": [
+      { "op": "remove", "path": "/tasks/items/1" },
+      { "op": "remove", "path": "/tasks/items/2" },
+      { "op": "remove", "path": "/tasks/items/3" }
+    ] }
+  },
+  {
+    "call":  { "action": "undo", "path": "/tasks" },
+    "reply": { "ok": true, "changes": [
+      { "op": "add", "path": "/tasks/items/1", "value": { "title": "Buy milk", "done": true } },
+      { "op": "add", "path": "/tasks/items/2", "value": { "title": "Email the landlord about the radiator", "done": true } },
+      { "op": "add", "path": "/tasks/items/3", "value": { "title": "Book dentist appointment", "done": true } }
+    ] }
+  },
+  {
+    "note": "Path to a task that doesn't exist.",
+    "call":  { "action": "delete", "path": "/tasks/items/99" },
+    "reply": { "ok": false, "error": "not_found", "message": "No task at /tasks/items/99." }
   }
-}
+]

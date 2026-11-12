@@ -1,65 +1,54 @@
-# To-do app: first attempt at a representation
+# To-do app representation
 
-`app.html` was built first, as an ordinary app, without the JSON in mind.
-The three JSON files were then written by hand to describe it:
+`app.html` is an ordinary to-do app, built before any representation was designed.
+`representation.json` describes it for an AI agent; `exchange.json` shows calls and replies.
 
-| File | What it shows |
-|---|---|
-| `snapshot-main.json` | Filter on "Active", a duplicate-title error, an undo toast counting down |
-| `snapshot-confirm.json` | The "Clear done" confirmation dialog open over the list |
-| `exchange.json` | An action sent by the agent and the app's diff reply, plus failure and stale cases |
+## The idea
 
-## Choices made, and why
+Describe what the app **is**, not what it looks like. With the UI stripped away,
+this app is a list of tasks (title + done flag) that can be added to, renamed,
+marked done, deleted, cleared of done tasks and undone. Layout, buttons, the filter,
+the confirm dialog and the toast are presentation and are left out.
 
-1. **Stable ids, not coordinates.** `task:3` stays `task:3` when the list re-renders,
-   gets filtered or gets reordered. The agent acts by `target` + `action`.
-2. **Item actions are declared once per list.** Each task row has a checkbox and a
-   delete button. Repeating them per item would cost tokens and add nothing, so
-   `tasks.item` says what *every* item can do and the items carry only data.
-   This is the main token saving, and it grows with list length.
-3. **Hidden affordances are named.** Rename is a double-click with no visible button.
-   A screenshot can't show it, so it becomes an action, with `ui_hint` saying
-   how a human would do it.
-4. **What's off-screen is still accounted for.** `shown: 2, total: 4, limited_by: "filter"`
-   tells the agent tasks are hidden and why. The duplicate error points at
-   "Buy milk", which the filter hides. An agent reading only what's visible would be
-   confused; this one knows to look.
-5. **Consequences are stated before acting.** `confirm`, `undo_window_ms` and `danger`
-   tell the agent whether an action is reversible and whether it will be asked to confirm.
-   `clear_done` says it also deletes *hidden* done tasks, which a careful
-   agent would want to know.
-6. **Time is explicit.** The toast's `expires_in_ms` turns "there's an Undo button"
-   into "there's an Undo button for about 4 more seconds".
-7. **Modals collapse the background.** When the dialog is open, everything behind it
-   is inert, so `snapshot-confirm.json` replaces the whole tree with a one-line
-   `summary` and an `expand` hook. The agent sees only what it can act on.
-8. **Constraints come before errors.** `max_length`, `unique` etc. let the agent avoid an
-   invalid submit instead of discovering it.
-9. **Replies are diffs, with a sequence number.** `seq` lets the app reject actions
-   based on an outdated view (`stale`), and diffs keep follow-up turns small.
-10. **`actions` is a list or a map.** A plain list (`["type", "clear"]`) for standard
-    actions, a map when there's something worth saying. Saves tokens for the common case.
+## Rules of the format
 
-## Problems this exposed
+1. **The representation is a tree of the app's data.** Only nodes the agent can act on
+   carry anything besides data.
+2. **Every interactive node has a `path`:** its navigation path from the root, spelled
+   with the actual keys of the tree (`/tasks`, `/tasks/items/3`). Task ids are stable,
+   so a path keeps pointing at the same task after others are deleted.
+3. **Every interactive node has an `api` section,** one entry per call, each with:
+   - `call`: the exact JSON the agent sends, with `<placeholders>` for what it fills in.
+     Rules on arguments live inside the placeholder
+     (`<string: non-empty, ≤120 chars, unique ignoring case>`).
+   - `reply`: the JSON the app sends back on success.
+   - `errors`: the error codes this call can return beyond the common ones.
+4. **Repeated children are documented once.** `items` holds the `path` pattern and `api`
+   for every task; the tasks themselves are bare data.
+5. **Replies have one shape**, defined once at the root under `reply`:
+   - success: `{ "ok": true, "changes": [...] }`, where each change is
+     `add`, `set` or `remove` at a path, so the agent can update its copy of the
+     tree without re-reading it;
+   - failure: `{ "ok": false, "error": "<code>", "message": "..." }`.
+6. **No uniform schema beyond that.** Data nodes are whatever shape suits the app,
+   to keep the representation small.
 
-- **Who writes `does` and `summary`?** They're the most useful fields and the ones no
-  automatic adapter could produce from a DOM or accessibility tree. Either apps opt in
-  (like ARIA), or an LLM writes them once per app and they get cached, or we accept
-  thinner snapshots from adapters.
-- **UI vs. data.** I described the *UI* (what a user can see and do), not the app's data
-  model. Exposing the model (all four tasks, always) would be simpler for the agent,
-  but then it's an API, not a view, and the agent can't tell what the human sees.
-  I think both have a place; this format should probably stay UI-faithful and allow
-  an optional `data` section.
-- **Semantic vs. physical actions.** `rename` is semantic; underneath it's double-click,
-  type, Enter. The format assumes the runtime can perform semantic actions. A pure
-  observer (adapter that can only click and type) would need `ui_hint` to be
-  machine-readable, not prose.
-- **Roles are ad hoc.** `choice`, `status`, `toolbar` were picked on the spot. We'll
-  need a small fixed vocabulary, probably borrowed from ARIA and trimmed down.
-- **Visual-only meaning was dropped.** Strike-through on done tasks became
-  `done: true`; that's the point. But some apps encode meaning purely in color or
-  layout (a red row, a chart), and this example didn't test that.
-- **Not measured yet.** I haven't compared token counts against a screenshot or a raw
-  DOM/accessibility dump, or tested whether an agent can actually drive the app
-  from these files alone.
+## Behaviour that differs from the UI
+
+- Renaming to an empty title returns `empty_title`. The UI silently keeps the old
+  title instead. An explicit error is better for an agent.
+- `clear_done` deletes right away. The UI asks for confirmation first; for an agent,
+  `undo` is the safety net.
+- `clear_done` with nothing done returns `nothing_done`. The UI disables the button.
+
+## Open questions
+
+- **Order.** Tasks have a display order (undo restores a task to its old position).
+  This relies on JSON object keys keeping their order. A list would be explicit
+  but would make paths positional again.
+- **Stale views.** If the app changes on its own (another user, a timer), a call can
+  be based on an outdated tree. A version number on the tree and on each call
+  would let the app refuse such calls.
+- **Who writes the `api` sections?** Here they're written by hand. Apps could publish
+  them themselves, or a tool could generate them from the app's code.
+- **Size.** Not yet measured against a screenshot or an accessibility-tree dump.

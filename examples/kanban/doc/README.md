@@ -17,5 +17,7 @@ board has changed since version n.
   `value` for `remove`. Apply them to your copy of the tree.
 - Failure: `{"ok": false, "error": "<code>", "message": "<explanation>"}`.
 
+Long lists come back in batches of 100; see `observe.md`.
+
 Any call can fail with `unknown_action`, `bad_args`, `not_found` or `stale`.
 Each action's doc lists its other errors.

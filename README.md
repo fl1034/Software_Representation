@@ -93,9 +93,32 @@ budget, the app replaces its largest child with a stub that says how to see it:
 ```
 
 The rule is mechanical: the app doesn't guess what the agent needs.
-`tools/fold.py` is a reference implementation.
+`tools/fold.py` is a reference implementation of folding, overflow, `page` and `find`.
 
-### 8. Versions
+### 8. Long lists: `overflow`, `page` and `find`
+
+A node never returns more than 100 children. Any collection that could grow past
+that always lists `page` and `find` in its `api`, whatever its current size:
+
+- `page`: the children after a given id, in the collection's order. It uses a cursor
+  (`"after": "k100"`), not a page number, so items added or removed meanwhile
+  don't shift what comes next.
+- `find`: only the children whose fields equal the values given, and/or whose text
+  contains some words. Deliberately simple: exact matches plus a text search.
+
+Both reply in the same shape as `observe`. Only when a reply actually leaves children
+out does it carry a note, including the exact call for the next batch:
+
+```json
+"overflow": {
+  "message": "Showing 100 of 10000 children. Send `next` for more, or narrow it down with find (doc/cards/find.md).",
+  "next": { "action": "page", "path": "/cards", "after": "k100" }
+}
+```
+
+The child limit applies first, then folding keeps the reply under the size budget.
+
+### 9. Versions
 
 The tree has a `version` number that goes up with every change. Any call may
 include `"version": <n>`. If the data has changed since then, the call fails with
@@ -104,7 +127,7 @@ a sync job.
 
 ### Reserved keys
 
-`path`, `api`, `*`, `defaults`, `derived`, `folded`, and on the root `app`,
+`path`, `api`, `*`, `defaults`, `derived`, `folded`, `overflow`, and on the root `app`,
 `version` and `docs`. They can't be used as ids.
 
 ## Examples
@@ -119,14 +142,21 @@ Each example has the app itself (`app.html`), its full tree (`state.json`), its 
 To see what `observe` returns:
 
 ```bash
-python3 tools/fold.py examples/kanban/state.json / 2048
+python3 tools/fold.py examples/kanban/state.json /
+```
+
+Overflow, with the child limit lowered so this small board overflows:
+
+```bash
+python3 tools/fold.py examples/kanban/state.json /cards --max-children 3
+```
+
+```bash
+python3 tools/fold.py examples/kanban/state.json /cards --find '{"where": {"assignee": "u2"}}'
 ```
 
 ## Open questions
 
-- **Very wide nodes.** Folding replaces children with stubs, but 10,000 cards would
-  still mean 10,000 stubs. Likely answer: `observe` returns the first page with a stub
-  for the rest (`"Observe /cards after k200"`). Not yet specified.
 - **Who writes the docs?** Here they're written by hand. An app could ship them, or a
   tool could generate them from the app's code.
 - **Not yet tested with a real agent.** Next step: give an agent only `doc/` and

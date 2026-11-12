@@ -33,6 +33,7 @@
 
   "cards": {
     "path": "/cards",
+    "api": ["page", "find"],
     "*": {
       "path": "/cards/<card id>",
       "api": ["rename", "set_description", "set_labels", "assign", "set_due", "move", "archive", "restore", "delete", "add_checklist_item", "comment"],
@@ -43,6 +44,10 @@
           "path": "/cards/<card id>/checklist/<item id>",
           "api": ["set_done", "remove"]
         }
+      },
+      "comments": {
+        "path": "/cards/<card id>/comments",
+        "api": ["page"]
       }
     },
     "k1": { "title": "Dark mode for settings page", "labels": ["l2", "l3"] },

@@ -5,7 +5,7 @@
   "api": ["observe"],
   "tasks": {
     "path": "/tasks",
-    "api": ["add", "clear_done", "undo"],
+    "api": ["add", "clear_done", "undo", "page", "find"],
     "*": {
       "path": "/tasks/<task id>",
       "api": ["rename", "set_done", "delete"]

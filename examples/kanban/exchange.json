@@ -1,0 +1,41 @@
+[
+  {
+    "note": "Task given to the agent: \"The login bug is fixed. Tick off the fix, send it to review and tell Priya.\" Starts from representation.json.",
+    "call":  { "action": "set_done", "path": "/cards/k4/checklist/k4-i2", "done": true },
+    "reply": { "ok": true, "changes": [{ "op": "set", "path": "/cards/k4/checklist/k4-i2/done", "value": true }] }
+  },
+  {
+    "call":  { "action": "move", "path": "/cards/k4", "column": "c3" },
+    "reply": { "ok": true, "changes": [
+      { "op": "set", "path": "/columns/c2/cards", "value": ["k5", "k6"] },
+      { "op": "set", "path": "/columns/c3/cards", "value": ["k7", "k4"] }
+    ] }
+  },
+  {
+    "call":  { "action": "comment", "path": "/cards/k4", "text": "Fixed and in review. Regression test still to do." },
+    "reply": { "ok": true, "changes": [{ "op": "add", "path": "/cards/k4/comments/k4-m21", "value": { "author": "u1", "text": "Fixed and in review. Regression test still to do.", "at": "2026-11-12" } }] }
+  },
+  {
+    "note": "Review now holds 2 cards, its limit. Another move into it is refused.",
+    "call":  { "action": "move", "path": "/cards/k6", "column": "c3" },
+    "reply": { "ok": false, "error": "column_full", "message": "Review is at its limit of 2 cards (k7, k4)." }
+  },
+  {
+    "note": "Reorder within a column: put k3 at the top of Backlog.",
+    "call":  { "action": "move", "path": "/cards/k3", "column": "c1", "position": 0 },
+    "reply": { "ok": true, "changes": [{ "op": "set", "path": "/columns/c1/cards", "value": ["k3", "k1", "k2"] }] }
+  },
+  {
+    "note": "Bring back an archived card. It returns to the column it came from.",
+    "call":  { "action": "restore", "path": "/cards/k9" },
+    "reply": { "ok": true, "changes": [
+      { "op": "set", "path": "/cards/k9/archived", "value": false },
+      { "op": "set", "path": "/columns/c1/cards", "value": ["k3", "k1", "k2", "k9"] }
+    ] }
+  },
+  {
+    "note": "Assign to someone who isn't on the board.",
+    "call":  { "action": "assign", "path": "/cards/k1", "assignee": "u7" },
+    "reply": { "ok": false, "error": "unknown_member", "message": "No member u7. Members: u1, u2, u3." }
+  }
+]

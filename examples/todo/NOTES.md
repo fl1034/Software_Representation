@@ -15,7 +15,7 @@ the confirm dialog and the toast are presentation and are left out.
 1. **The representation is a tree of the app's data.** Only nodes the agent can act on
    carry anything besides data.
 2. **Every interactive node has a `path`:** its navigation path from the root, spelled
-   with the actual keys of the tree (`/tasks`, `/tasks/items/3`). Task ids are stable,
+   with the actual keys of the tree (`/tasks`, `/tasks/3`). Task ids are stable,
    so a path keeps pointing at the same task after others are deleted.
 3. **Every interactive node has an `api` section,** one entry per call, each with:
    - `call`: the exact JSON the agent sends, with `<placeholders>` for what it fills in.
@@ -23,8 +23,9 @@ the confirm dialog and the toast are presentation and are left out.
      (`<string: non-empty, ≤120 chars, unique ignoring case>`).
    - `reply`: the JSON the app sends back on success.
    - `errors`: the error codes this call can return beyond the common ones.
-4. **Repeated children are documented once.** `items` holds the `path` pattern and `api`
-   for every task; the tasks themselves are bare data.
+4. **Repeated children are documented once.** The reserved key `*` holds the `path`
+   pattern and `api` for every task; the tasks themselves sit beside it as bare data.
+   Reserved keys (`path`, `api`, `*`) can't be used as ids.
 5. **Replies have one shape**, defined once at the root under `reply`:
    - success: `{ "ok": true, "changes": [...] }`, where each change is
      `add`, `set` or `remove` at a path, so the agent can update its copy of the

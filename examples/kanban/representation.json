@@ -1,0 +1,197 @@
+{
+  "app": "Sprint Board",
+  "reply": {
+    "ok":    { "ok": true, "changes": ["<{ \"op\": \"add\" | \"set\" | \"remove\", \"path\": \"<path>\", \"value\": <new value, omitted for remove> }>"] },
+    "error": { "ok": false, "error": "<code>", "message": "<text for the agent>" },
+    "errors_any_call": ["unknown_action", "bad_args", "not_found"]
+  },
+  "today": "2026-11-12",
+  "me": "u1",
+
+  "members": {
+    "u1": { "name": "You" },
+    "u2": { "name": "Priya Shah" },
+    "u3": { "name": "Sam Ortiz" }
+  },
+  "labels": {
+    "l1": { "name": "Bug" },
+    "l2": { "name": "Feature" },
+    "l3": { "name": "Design" },
+    "l4": { "name": "Chore" }
+  },
+
+  "columns": {
+    "path": "/columns",
+    "api": {
+      "add": {
+        "call":   { "action": "add", "path": "/columns", "name": "<string: non-empty>", "limit": "<integer ≥ 1 | null; optional, default null>" },
+        "reply":  { "ok": true, "changes": [{ "op": "add", "path": "/columns/<new column id>", "value": { "name": "<name>", "limit": "<limit>", "cards": [] } }] },
+        "errors": ["empty_name"]
+      }
+    },
+    "*": {
+      "path": "/columns/<column id>",
+      "api": {
+        "rename": {
+          "call":   { "action": "rename", "path": "/columns/<column id>", "name": "<string: non-empty>" },
+          "reply":  { "ok": true, "changes": [{ "op": "set", "path": "/columns/<column id>/name", "value": "<name>" }] },
+          "errors": ["empty_name"]
+        },
+        "set_limit": {
+          "call":   { "action": "set_limit", "path": "/columns/<column id>", "limit": "<integer ≥ number of cards already in the column | null for no limit>" },
+          "reply":  { "ok": true, "changes": [{ "op": "set", "path": "/columns/<column id>/limit", "value": "<limit>" }] },
+          "errors": ["limit_too_low"]
+        },
+        "delete": {
+          "call":   { "action": "delete", "path": "/columns/<column id>" },
+          "reply":  { "ok": true, "changes": [{ "op": "remove", "path": "/columns/<column id>" }] },
+          "errors": ["column_not_empty", "last_column: the board must keep at least one column"]
+        },
+        "add_card": {
+          "call":   { "action": "add_card", "path": "/columns/<column id>", "title": "<string: non-empty, ≤200 chars>" },
+          "reply":  { "ok": true, "changes": [
+            { "op": "add", "path": "/cards/<new card id>", "value": { "title": "<title>" } },
+            { "op": "set", "path": "/columns/<column id>/cards", "value": ["<card ids, new one last>"] }
+          ] },
+          "errors": ["empty_title", "title_too_long", "column_full"]
+        }
+      }
+    },
+    "c1": { "name": "Backlog",     "limit": null, "cards": ["k1", "k2", "k3"] },
+    "c2": { "name": "In progress", "limit": 3,    "cards": ["k4", "k5", "k6"] },
+    "c3": { "name": "Review",      "limit": 2,    "cards": ["k7"] },
+    "c4": { "name": "Done",        "limit": null, "cards": ["k8"] }
+  },
+
+  "cards": {
+    "path": "/cards",
+    "*": {
+      "path": "/cards/<card id>",
+      "defaults": { "description": "", "labels": [], "assignee": null, "due": null, "overdue": false, "checklist": {}, "comments": {}, "archived": false },
+      "derived": { "overdue": "due < today and the card is not in the last column" },
+      "api": {
+        "rename": {
+          "call":   { "action": "rename", "path": "/cards/<card id>", "title": "<string: non-empty, ≤200 chars>" },
+          "reply":  { "ok": true, "changes": [{ "op": "set", "path": "/cards/<card id>/title", "value": "<title>" }] },
+          "errors": ["empty_title", "title_too_long", "card_archived"]
+        },
+        "set_description": {
+          "call":   { "action": "set_description", "path": "/cards/<card id>", "description": "<string, may be empty>" },
+          "reply":  { "ok": true, "changes": [{ "op": "set", "path": "/cards/<card id>/description", "value": "<description>" }] },
+          "errors": ["card_archived"]
+        },
+        "set_labels": {
+          "call":   { "action": "set_labels", "path": "/cards/<card id>", "labels": ["<label id from /labels>", "<replaces the whole list>"] },
+          "reply":  { "ok": true, "changes": [{ "op": "set", "path": "/cards/<card id>/labels", "value": ["<label ids>"] }] },
+          "errors": ["unknown_label", "card_archived"]
+        },
+        "assign": {
+          "call":   { "action": "assign", "path": "/cards/<card id>", "assignee": "<member id from /members | null to unassign>" },
+          "reply":  { "ok": true, "changes": [{ "op": "set", "path": "/cards/<card id>/assignee", "value": "<assignee>" }] },
+          "errors": ["unknown_member", "card_archived"]
+        },
+        "set_due": {
+          "call":   { "action": "set_due", "path": "/cards/<card id>", "due": "<YYYY-MM-DD | null to clear>" },
+          "reply":  { "ok": true, "changes": [
+            { "op": "set", "path": "/cards/<card id>/due", "value": "<due>" },
+            { "op": "set", "path": "/cards/<card id>/overdue", "value": "<recomputed>" }
+          ] },
+          "errors": ["bad_date", "card_archived"]
+        },
+        "move": {
+          "call":   { "action": "move", "path": "/cards/<card id>", "column": "<column id from /columns>", "position": "<integer, 0-based; optional, default last>" },
+          "reply":  { "ok": true, "changes": [
+            { "op": "set", "path": "/columns/<old column id>/cards", "value": ["<card ids>"] },
+            { "op": "set", "path": "/columns/<new column id>/cards", "value": ["<card ids>"] },
+            { "op": "set", "path": "/cards/<card id>/overdue", "value": "<recomputed; only if it changed>" }
+          ] },
+          "errors": ["column_full: the target column is at its limit (moving within the same column is always allowed)", "card_archived"]
+        },
+        "archive": {
+          "call":   { "action": "archive", "path": "/cards/<card id>" },
+          "reply":  { "ok": true, "changes": [
+            { "op": "set", "path": "/columns/<column id>/cards", "value": ["<card ids, this one removed>"] },
+            { "op": "set", "path": "/cards/<card id>/archived", "value": "<column id it was in>" }
+          ] },
+          "errors": ["card_archived"]
+        },
+        "restore": {
+          "call":   { "action": "restore", "path": "/cards/<card id>" },
+          "reply":  { "ok": true, "changes": [
+            { "op": "set", "path": "/cards/<card id>/archived", "value": false },
+            { "op": "set", "path": "/columns/<column id>/cards", "value": ["<card ids, this one last>"] }
+          ] },
+          "notes":  "Goes back to the column it was archived from, or the first column if that one was deleted.",
+          "errors": ["not_archived", "column_full"]
+        },
+        "delete": {
+          "call":   { "action": "delete", "path": "/cards/<card id>" },
+          "reply":  { "ok": true, "changes": [{ "op": "remove", "path": "/cards/<card id>" }] },
+          "notes":  "Permanent. Only archived cards can be deleted.",
+          "errors": ["not_archived"]
+        },
+        "add_checklist_item": {
+          "call":   { "action": "add_checklist_item", "path": "/cards/<card id>", "text": "<string: non-empty>" },
+          "reply":  { "ok": true, "changes": [{ "op": "add", "path": "/cards/<card id>/checklist/<new item id>", "value": { "text": "<text>", "done": false } }] },
+          "errors": ["empty_text", "card_archived"]
+        },
+        "comment": {
+          "call":   { "action": "comment", "path": "/cards/<card id>", "text": "<string: non-empty>" },
+          "reply":  { "ok": true, "changes": [{ "op": "add", "path": "/cards/<card id>/comments/<new comment id>", "value": { "author": "<me>", "text": "<text>", "at": "<today>" } }] },
+          "notes":  "Posted as /me. Comments can't be edited or deleted.",
+          "errors": ["empty_text", "card_archived"]
+        }
+      },
+      "checklist": {
+        "*": {
+          "path": "/cards/<card id>/checklist/<item id>",
+          "api": {
+            "set_done": {
+              "call":   { "action": "set_done", "path": "/cards/<card id>/checklist/<item id>", "done": "<true | false>" },
+              "reply":  { "ok": true, "changes": [{ "op": "set", "path": "/cards/<card id>/checklist/<item id>/done", "value": "<done>" }] },
+              "errors": ["card_archived"]
+            },
+            "remove": {
+              "call":   { "action": "remove", "path": "/cards/<card id>/checklist/<item id>" },
+              "reply":  { "ok": true, "changes": [{ "op": "remove", "path": "/cards/<card id>/checklist/<item id>" }] },
+              "errors": ["card_archived"]
+            }
+          }
+        }
+      }
+    },
+    "k1": { "title": "Dark mode for settings page", "labels": ["l2", "l3"] },
+    "k2": { "title": "Upgrade build tooling", "labels": ["l4"], "assignee": "u3" },
+    "k3": { "title": "Export board as CSV", "labels": ["l2"], "due": "2026-11-26" },
+    "k4": {
+      "title": "Login fails with + in email", "labels": ["l1"], "assignee": "u2", "due": "2026-11-10", "overdue": true,
+      "description": "Reported by two customers. Repro: sign up with a+b@example.com, then log in.",
+      "checklist": {
+        "k4-i1": { "text": "Reproduce locally", "done": true },
+        "k4-i2": { "text": "Fix email normalisation", "done": false },
+        "k4-i3": { "text": "Add regression test", "done": false }
+      },
+      "comments": { "k4-m4": { "author": "u2", "text": "Found it: we URL-decode the address twice.", "at": "2026-11-11" } }
+    },
+    "k5": {
+      "title": "Onboarding checklist UI", "labels": ["l2", "l3"], "assignee": "u1", "due": "2026-11-15",
+      "checklist": {
+        "k5-i1": { "text": "Wireframe", "done": true },
+        "k5-i2": { "text": "Build component", "done": true },
+        "k5-i3": { "text": "Hook up API", "done": false }
+      }
+    },
+    "k6": { "title": "Rate-limit the public API", "labels": ["l2"], "assignee": "u3", "due": "2026-11-19" },
+    "k7": {
+      "title": "Fix flaky date-picker test", "labels": ["l1", "l4"], "assignee": "u1", "due": "2026-11-13",
+      "comments": { "k7-m1": { "author": "u3", "text": "Can you check the timezone handling too?", "at": "2026-11-12" } }
+    },
+    "k8": { "title": "Release notes for 2.4", "labels": ["l4"], "assignee": "u2", "due": "2026-11-07" },
+    "k9": { "title": "Old pricing page banner", "labels": ["l3"], "archived": "c1" }
+  },
+
+  "human": {
+    "open_card": "k4",
+    "unsaved": { "/cards/k4/description": "Root cause: the address is URL-decoded twice in the login handler." }
+  }
+}

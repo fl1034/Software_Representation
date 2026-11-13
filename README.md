@@ -146,10 +146,27 @@ next where possible.
 "c4":{"busy":{"by":"s57","last":{"name":"Done","limit":null,"cards":["k8"]}}}
 ```
 
-A submission that creates something that takes time (a build, an export) makes the new
-node appear at once, busy, with no `last`, since it had no value before. Its marker names
-the submission (`"by":"s6"`), so the caller finds the new id by observing the collection
-or the root's `busy` list. The action's doc says where the new node appears.
+**The tree only changes through pings.** Nodes are added, set or removed only when a
+submission settles, and every such change is in that submission's ping. Busy markers
+cover nodes that already exist; they never add one. Nothing in the tree changes without
+the agent being told.
+
+**Long work is staged first, then started.** So a job that creates something (a build,
+an export, a deploy) never makes a node appear silently. It takes two submissions:
+
+1. `stage` creates the work item in a well-defined state, `"status":"staged"`. It settles
+   at once, and its ping announces the new path:
+   `{"action":"stage","path":"/services/storefront/builds"}` →
+   `{"receipt":"s6","ping":{"version":12,"changed":["/services/storefront/builds/b6"]}}`.
+   The agent now knows the id, and can observe the item, listen to it, check or change it,
+   or discard it, before anything runs.
+2. `start` on the staged item begins the job:
+   `{"action":"start","path":"/services/storefront/builds/b6"}`. Only now does the item go
+   busy, with progress, and its ping reports the outcome when the job finishes.
+
+A confirmation belongs to `start`, not `stage`: staging a production deploy is harmless,
+and starting it is what raises the alert. Work on a node that already exists (archiving a
+column, recalculating a sheet) doesn't need staging; it just makes existing nodes busy.
 
 When running work can be stopped, its busy marker offers the call that stops it:
 `"cancel":{"action":"cancel","path":"/","submission":"s15"}`. The built-in `cancel`

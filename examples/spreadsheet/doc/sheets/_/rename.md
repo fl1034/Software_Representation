@@ -6,6 +6,8 @@ their values don't change.
 Call: `{"action": "rename", "path": "/sheets/<sheet id>", "name": "<name>"}`
 - `name`: unique ignoring case, without `'` or `!`.
 
+Busy: the sheet, and every formula on other sheets that names it.
+
 Changes: the sheet's `name`, and every formula cell that named it.
 
 Errors:

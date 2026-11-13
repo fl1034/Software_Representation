@@ -6,7 +6,8 @@ service is busy meanwhile, with progress.
 Call: `{"action": "deploy", "path": "/services/<service>/builds/<build id>", "env": "staging"}`
 - `env`: `staging` or `production`.
 
-**Production asks a person first.** The receipt carries an alert with `answer_by: person`:
+**Production asks a person first.** An alert with `answer_by: person` goes out on the alert
+channel:
 you can't confirm it yourself. Tell the person it's waiting; they approve or reject it in
 the app. If they approve, the rollout starts; either way, the deploy's ping says what
 happened. Deploys to staging start at once.

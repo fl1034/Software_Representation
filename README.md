@@ -99,9 +99,16 @@ A submission the app can't carry out (a full column, an unknown member, a bad ar
 is no exception. The receipt carries the error, the busy period lasts no time at all,
 and the ping reports that nothing changed. Errors are feedback, never part of the tree.
 
-Both moments are public. When nodes go busy, the app tells the caller in its receipt,
-and tells everyone listening on any of those paths with a busy event carrying the same
-submission id and paths. When they settle, the ping goes to the caller and to everyone
+**What an action makes busy is written in its doc, not in messages.** When an action
+makes more than the called node busy, its doc says which ("the column and every card in
+it"; "the written cells and every formula that depends on them, on any sheet"). That is
+a fact about the action, true every time, so the agent reads it once instead of being
+told again with every submission. Messages only say which submission went busy; the
+agent can always observe to see exactly which nodes are busy right now.
+
+Both moments are public. When a submission goes busy, the caller has its receipt, and
+everyone listening on any affected path gets a busy event naming the submission, the
+action and the called node. When it settles, the ping goes to the caller and to everyone
 listening, whether anyone is listening or not. So every agent can see when part of the
 tree stops having a well-defined value, not only the one that caused it.
 
@@ -111,9 +118,9 @@ receipt, and listeners get only the ping.
 
 ```json
 {"action":"archive_all","path":"/columns/c4"}
-→ {"receipt":"s57","busy":["/columns/c4","/cards/k8"]}
-   at the same moment, to anyone listening on those paths:
-  {"busy":"s57","paths":["/columns/c4","/cards/k8"]}
+→ {"receipt":"s57"}
+   at the same moment, to anyone listening on an affected path:
+  {"busy":"s57","action":"archive_all","path":"/columns/c4"}
    ... later, to the caller and anyone listening on those paths:
   {"ping":"s57","version":43,"changed":["/columns/c4/cards","/cards/k8/archived"]}
 
@@ -122,10 +129,9 @@ receipt, and listeners get only the ping.
 ```
 
 Receipts don't repeat the call: the receipt answers the call just sent, and its id is
-what the busy event and the ping refer to. Empty lists (`changed`, `removed`, `busy`,
-`paths`) are left out. A list of paths stops at 100 and then gives the full count as
-`changed_total`, `removed_total`, `busy_total` or `paths_total`; the agent observes for
-the rest.
+what the busy event and the ping refer to. Empty lists (`changed`, `removed`) are left
+out. A list of paths stops at 100 and then gives the full count as `changed_total` or
+`removed_total`; the agent observes for the rest.
 
 A ping names what changed, not the new values. To see them, observe with `since`
 (see 7), or observe the changed paths.
@@ -141,8 +147,9 @@ next where possible.
 ```
 
 A submission that creates something that takes time (a build, an export) makes the new
-node appear at once, busy, with no `last`, since it had no value before. The receipt's
-`busy` list gives its path, so the caller knows the new id straight away.
+node appear at once, busy, with no `last`, since it had no value before. Its marker names
+the submission (`"by":"s6"`), so the caller finds the new id by observing the collection
+or the root's `busy` list. The action's doc says where the new node appears.
 
 When running work can be stopped, its busy marker offers the call that stops it:
 `"cancel":{"action":"cancel","path":"/","submission":"s15"}`. The built-in `cancel`
@@ -166,7 +173,8 @@ nothing changed. The app doesn't queue it; the agent can listen and resubmit.
 **Waiting and listening.** `{"action":"listen","path":"/cards"}` subscribes to every
 busy event and ping that touches a path under `/cards`, including those caused by other
 people, other agents or timers. An agent doesn't get a busy event for its own
-submission; its receipt already says the same. To wait for its own submission, an agent adds `"wait": true`; the app
+submission; its receipt already says the same. Listening is optional and chosen path by
+path; the alert channel (see 6) is neither. To wait for its own submission, an agent adds `"wait": true`; the app
 then holds the receipt until the ping and sends them as one message. How events travel
 (a socket, a stream, a long poll) is up to the app. An app that can't push still marks
 busy nodes, so the agent can poll with `observe`.
@@ -176,9 +184,26 @@ busy nodes, so the agent can poll with `observe`.
 A person is warned with a dialog that blocks the screen. Here a warning is a sticker on
 the tree, and what it blocks is shown the usual way: as busy nodes.
 
+**The alert channel.** Every running app instance has exactly one alert channel. Every
+client is on it from its first call, and can't leave it. It stays silent almost all the
+time, and goes off only when the app does what a person's screen would do with a frozen
+dialog: a submission waits for a yes or no, or the whole app stops. Then every client
+gets the alert, at once, whatever it is or isn't listening to:
+
+```json
+{"alert":{"by":"s88","message":"Deleting Q1 Budget breaks 5 formulas on Summary: they would show #REF!. This can't be undone.",
+          "answer_by":"caller","expires_in":300,
+          "confirm":{"action":"confirm","path":"/","submission":"s88"},
+          "cancel":{"action":"cancel","path":"/","submission":"s88"}}}
+```
+
+That is the only place alerts are sent: receipts and busy events never carry them. An
+agent that missed one, or joins later, still sees every open alert at the root.
+
 **A submission that needs confirming.** Some submissions shouldn't go ahead without a
 second look, such as deleting something for good. The app makes the affected paths busy
-as for any submission, and puts an alert at the root, where everyone observing sees it:
+as for any submission (the action's doc says it asks first), sends the alert on the alert
+channel, and keeps it at the root while it's open:
 
 ```json
 "alerts":[{"by":"s88","message":"Deleting Q1 Budget breaks 5 formulas on Summary: they would show #REF!. This can't be undone.",
@@ -187,9 +212,9 @@ as for any submission, and puts an alert at the root, where everyone observing s
            "cancel":{"action":"cancel","path":"/","submission":"s88"}}]
 ```
 
-- The caller's receipt carries the alert, and so does the busy event listeners get. A
-  submission sent with `"wait": true` gets its receipt at once with the alert: there is
-  nothing to wait for until someone answers.
+- The caller gets a plain receipt, and the alert on the alert channel, with its own
+  submission id in `by`. A submission sent with `"wait": true` gets its receipt at once,
+  without a ping inside: there is nothing to wait for until someone answers.
 - `confirm` and `cancel` are built in on the root, and not listed in any `api`. (`cancel`
   also stops running work whose busy marker offers it; see 5.) They are submissions that
   change nothing themselves: answering lets the original submission
@@ -213,8 +238,9 @@ work. Then the whole tree goes busy at once and the alert has no answer, only a 
 "alerts":[{"by":"app","message":"Restarting for an update. Back in about a minute."}]
 ```
 
-Every submission meanwhile gets the error `busy`. When the alert ends, the app sends a
-ping with `"app"` in place of a submission id: `{"ping":"app","version":43}`.
+This alert goes out on the alert channel too. Every submission meanwhile gets the error
+`busy`. When it ends, the app says so on the same channel, so everyone knows the freeze is
+over: `{"ping":"app","version":43}`.
 
 Alerts aren't data: like busy markers, they appear and disappear without changing the
 version.

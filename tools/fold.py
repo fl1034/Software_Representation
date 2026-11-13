@@ -398,9 +398,9 @@ def mark_busy(tree, submission, paths, progress=None):
         tree.setdefault("busy", []).extend(paths)
 
 
-def receipt(submission, busy=None, feedback=None):
+def receipt(submission, feedback=None):
+    """Answers the call just made. Which nodes the action makes busy is in its doc, not here."""
     r = {"receipt": submission}
-    capped(r, "busy", busy or [])
     if feedback:
         r["feedback"] = feedback
     return r
@@ -408,7 +408,7 @@ def receipt(submission, busy=None, feedback=None):
 
 def open_alert(tree, submission, paths, message, answer_by="caller", expires_in=300):
     """A submission that needs confirming: its paths go busy and an alert goes on the root.
-    Returns the alert, which the receipt and the busy event both carry."""
+    Returns the alert, which goes out on the alert channel to every client."""
     mark_busy(tree, submission, paths)
     alert = {"by": submission, "message": message, "answer_by": answer_by, "expires_in": expires_in,
              "confirm": {"action": "confirm", "path": "/", "submission": submission},
@@ -417,9 +417,16 @@ def open_alert(tree, submission, paths, message, answer_by="caller", expires_in=
     return alert
 
 
-def busy_event(submission, paths):
-    """What listeners get when a submission makes paths busy. The caller gets its receipt instead."""
-    return capped({"busy": submission}, "paths", paths)
+def busy_event(submission, action, path):
+    """What listeners on an affected path get when a submission goes busy. The caller gets its
+    receipt instead. It names the submission, action and called node; the action's doc says
+    which nodes it makes busy."""
+    return {"busy": submission, "action": action, "path": path}
+
+
+def alert_message(alert):
+    """What every client gets on the app's alert channel when an alert opens."""
+    return {"alert": alert}
 
 
 def settle(tree, log, submission, changes, feedback=None):

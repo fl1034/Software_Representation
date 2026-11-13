@@ -2,8 +2,8 @@
 
 Let a submission that is waiting for confirmation go ahead. Built in on the root.
 
-Call: `{"action": "confirm", "path": "/", "submission": "<submission id>"}`. The alert gives
-you this call ready to send, under `confirm`.
+Call: `{"action": "confirm", "path": "/", "submission": "<submission id>"}`. The alert (on the alert
+channel, and at the root) gives you this call ready to send, under `confirm`.
 
 It changes nothing itself, so its receipt and ping come at once with nothing changed.
 The confirmed submission then settles, and its ping says what it changed.

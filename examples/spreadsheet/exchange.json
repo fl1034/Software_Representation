@@ -7,10 +7,10 @@
     ]
   },
   {
-    "note": "The agent reads doc/sheets/_/cells/set.md and changes one cell. Every formula that depends on it, on both sheets, is busy until recalculation finishes. (In app.html recalculation is instant; on a big workbook it takes a while, so the receipt and ping are shown apart.)",
+    "note": "The agent reads doc/sheets/_/cells/set.md and changes one cell. Its doc says the written cells and every formula that depends on them, on any sheet, go busy until recalculation finishes, so the receipt doesn't list them. (In app.html recalculation is instant; on a big workbook it takes a while, so the receipt and ping are shown apart.)",
     "call": {"action":"set","path":"/sheets/s1/cells","cells":{"C3":500}},
     "receive": [
-      {"receipt":"s81","busy":["/sheets/s1/cells/C3","/sheets/s1/cells/E3","/sheets/s1/cells/F3","/sheets/s1/cells/C7","/sheets/s1/cells/E7","/sheets/s1/cells/F7","/sheets/s1/cells/C10","/sheets/s1/cells/E10","/sheets/s2/cells/B3","/sheets/s2/cells/B5","/sheets/s2/cells/B6","/sheets/s2/cells/B7"]}
+      {"receipt":"s81"}
     ]
   },
   {
@@ -30,7 +30,7 @@
     "note": "The agent fetches just the new values, across both sheets. The savings rate is /sheets/s2/cells/B6.",
     "call": {"action":"observe","path":"/","since":20},
     "receive": [
-      {"version":21,"node":{"sheets":{"s1":{"cells":{"E3":{"f":"=SUM(B3:D3)","v":1362},"F3":{"f":"=ROUND(AVERAGE(B3:D3),2)","v":454},"E7":{"f":"=SUM(B7:D7)","v":5926},"F7":{"f":"=ROUND(AVERAGE(B7:D7),2)","v":1975.33},"C3":500,"C7":{"f":"=SUM(C2:C6)","v":2065},"C10":{"f":"=C9-C7","v":1035},"E10":{"f":"=E9-E7","v":3524}}},"s2":{"cells":{"B6":{"f":"=ROUND(B5/B4*100,1)","v":37.3},"B5":{"f":"=B4-B3","v":3524},"B3":{"f":"=Budget!E7","v":5926}}}}}}
+      {"version":21,"node":{"sheets":{"s1":{"cells":{"E3":{"f":"=SUM(B3:D3)","v":1362},"E7":{"f":"=SUM(B7:D7)","v":5926},"F3":{"f":"=ROUND(AVERAGE(B3:D3),2)","v":454},"C7":{"f":"=SUM(C2:C6)","v":2065},"F7":{"f":"=ROUND(AVERAGE(B7:D7),2)","v":1975.33},"C3":500,"E10":{"f":"=E9-E7","v":3524},"C10":{"f":"=C9-C7","v":1035}}},"s2":{"cells":{"B3":{"f":"=Budget!E7","v":5926},"B5":{"f":"=B4-B3","v":3524},"B6":{"f":"=ROUND(B5/B4*100,1)","v":37.3}}}}}}
     ]
   },
   {
@@ -95,10 +95,11 @@
     ]
   },
   {
-    "note": "Task: \"We don't need Q1 Budget any more, delete it.\" Even with `wait`, the receipt comes back at once: the delete needs confirming, and the alert says what it would break. The sheet and the 5 formulas that use it are busy until someone answers.",
+    "note": "Task: \"We don't need Q1 Budget any more, delete it.\" Even with `wait`, the receipt comes back at once: the delete needs confirming. The alert arrives on the alert channel and says what it would break. The sheet and the 5 formulas that use it are busy until someone answers.",
     "call": {"action":"delete","path":"/sheets/s1","wait":true},
     "receive": [
-      {"receipt":"s88","busy":["/sheets/s1","/sheets/s2/cells/B3","/sheets/s2/cells/B4","/sheets/s2/cells/B5","/sheets/s2/cells/B6","/sheets/s2/cells/B7"],"alert":{"by":"s88","message":"Deleting Q1 Budget breaks 5 formulas on Summary: they would show #REF!. This can't be undone.","answer_by":"caller","expires_in":300,"confirm":{"action":"confirm","path":"/","submission":"s88"},"cancel":{"action":"cancel","path":"/","submission":"s88"}}}
+      {"receipt":"s88"},
+      {"alert":{"by":"s88","message":"Deleting Q1 Budget breaks 5 formulas on Summary: they would show #REF!. This can't be undone.","answer_by":"caller","expires_in":300,"confirm":{"action":"confirm","path":"/","submission":"s88"},"cancel":{"action":"cancel","path":"/","submission":"s88"}}}
     ]
   },
   {

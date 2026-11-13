@@ -8,5 +8,7 @@ Call: `{"action": "insert_rows", "path": "/sheets/<sheet id>", "at": 4, "count":
 - `at`: the row number the new rows take, from 1 to `rows` + 1.
 - `count`: optional, default 1, at most 1000.
 
+Busy: the sheet, and every formula on other sheets that refers to it.
+
 Changes: the sheet's `rows`; every moved cell (old ids removed, new ids changed);
 rewritten formula cells.

@@ -52,7 +52,7 @@ because progress and alert countdowns deliberately send no pings.
 
 - **New nodes are born busy.** A build doesn't exist until it's finished, but the agent
   needs its id at once to watch it. So the new node appears immediately, busy, with no
-  `last`, and the receipt's `busy` list gives its path.
+  `last`, its marker naming the submission; the agent finds it by observing the builds.
 - **`cancel` stops running work,** not just answers alerts. A busy marker offers the
   `cancel` call when the work can be stopped. A cancelled build is kept, with status
   `cancelled`, so the history stays complete.

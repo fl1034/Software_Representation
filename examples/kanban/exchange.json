@@ -72,7 +72,7 @@
   {
     "note": "Priya starts changing card k6 in the app herself. The agent listens on /, so it is told at once that k6 has no well-defined value for now.",
     "receive": [
-      {"busy":"s55","paths":["/cards/k6"]}
+      {"busy":"s55","action":"set_due","path":"/cards/k6"}
     ]
   },
   {
@@ -102,10 +102,10 @@
     ]
   },
   {
-    "note": "Task: \"Clear out Done.\" Imagine archiving is slow on this server. Without `wait`, the receipt comes back at once and lists what is now busy.",
+    "note": "Task: \"Clear out Done.\" Imagine archiving is slow on this server. Without `wait`, the receipt comes back at once. doc/columns/_/archive_all.md already said the column and its cards go busy, so the receipt doesn't repeat it.",
     "call": {"action":"archive_all","path":"/columns/c4"},
     "receive": [
-      {"receipt":"s57","busy":["/columns/c4","/cards/k8"]}
+      {"receipt":"s57"}
     ]
   },
   {
@@ -136,10 +136,11 @@
     ]
   },
   {
-    "note": "Task: \"Delete the old pricing banner card for good.\" k9 is archived, so it can be deleted, but doc/cards/_/delete.md says deleting asks for confirmation. The receipt carries the alert; anyone observing / sees it at the top, and k9 is busy until someone answers.",
+    "note": "Task: \"Delete the old pricing banner card for good.\" k9 is archived, so it can be deleted, but doc/cards/_/delete.md says deleting asks for confirmation. The receipt is plain; the alert arrives on the alert channel, which every client is on, and stays at the root. k9 is busy until someone answers.",
     "call": {"action":"delete","path":"/cards/k9"},
     "receive": [
-      {"receipt":"s59","busy":["/cards/k9"],"alert":{"by":"s59","message":"Deleting \"Old pricing page banner\" can't be undone.","answer_by":"caller","expires_in":300,"confirm":{"action":"confirm","path":"/","submission":"s59"},"cancel":{"action":"cancel","path":"/","submission":"s59"}}}
+      {"receipt":"s59"},
+      {"alert":{"by":"s59","message":"Deleting \"Old pricing page banner\" can't be undone.","answer_by":"caller","expires_in":300,"confirm":{"action":"confirm","path":"/","submission":"s59"},"cancel":{"action":"cancel","path":"/","submission":"s59"}}}
     ]
   },
   {

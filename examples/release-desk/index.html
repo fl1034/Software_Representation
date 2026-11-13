@@ -404,15 +404,18 @@ class Engine {
     const sub = { id, client: client.name, busy: r.busy, waiter: null, cancelRequested: false };
     this.subs.set(id, sub);
     for (const p of r.busy) this.busy.set(p, { by: id, progress: null, cancellable: !!r.cancellable });
-    const receipt = capped({ receipt: id }, "busy", r.busy);
+    // The receipt doesn't list what went busy: the action's doc says. Listeners on an affected
+    // path get a busy event naming the submission, the action and the called node.
+    const receipt = { receipt: id }, busyEvent = { busy: id, action: msg.action, path: msg.path };
     if (r.alert) {
       const a = { by: id, message: r.alert.message, answer_by: r.alert.answer_by ?? "caller", deadline: Date.now() + (r.alert.expires_in ?? 300) * 1000, then: r.then };
-      this.alerts.push(a); receipt.alert = this.alertView(a);
+      this.alerts.push(a);
       a.timer = setTimeout(() => { if (this.alerts.includes(a)) { this.alerts = this.alerts.filter(x => x !== a); this.settle(sub, [], { message: "Nobody answered in time, so it was cancelled." }); } }, a.deadline - Date.now());
-      this.deliver(capped({ busy: id, alert: this.alertView(a) }, "paths", r.busy), r.busy, client);
+      this.deliver(busyEvent, r.busy, client);
+      this.channel({ alert: this.alertView(a) });
       return receipt;
     }
-    this.deliver(capped({ busy: id }, "paths", r.busy), r.busy, client);
+    this.deliver(busyEvent, r.busy, client);
     this.work(sub, r);
     if (msg.wait) return new Promise(res => { sub.waiter = res; });
     return receipt;
@@ -445,6 +448,10 @@ class Engine {
     }
     return capped(capped({ version: this.version }, "changed", changed), "removed", removed);
   }
+  // The alert channel: one per app instance. Every client is on it and can't leave.
+  // Silent until a submission waits for a yes or no, or the whole app stops.
+  // Sent just after the current reply, so a caller always gets its receipt before the alert.
+  channel(msg) { setTimeout(() => { for (const c of this.clients) c.deliver(msg); }, 0); }
   deliver(msg, paths, except) {
     for (const c of this.clients) if (c !== except && c.listens.some(L => paths.some(p => under(p, L)))) c.deliver(msg);
   }
@@ -474,10 +481,10 @@ class Engine {
   }
   appAlert(message, ms) {
     const a = { by: "app", message }; this.alerts.push(a); this.busy.set("/", { by: "app" });
-    this.deliver({ busy: "app", paths: ["/"], alert: { by: "app", message } }, ["/"], null);
+    this.channel({ alert: { by: "app", message } });
     setTimeout(() => {
       this.alerts = this.alerts.filter(x => x !== a); this.busy.delete("/");
-      this.deliver({ ping: "app", version: this.version }, ["/"], null);
+      this.channel({ ping: "app", version: this.version });
     }, ms);
   }
 }
@@ -677,7 +684,7 @@ $("outage").onclick = () => engine.appAlert("The build runner is offline. Builds
 const pings = new Map(), pingWaiters = new Map();
 let total = 0, count = 0;
 const agent = engine.client("agent", msg => { logEntry("in-event", msg); if (msg.ping) { pings.set(msg.ping, msg); pingWaiters.get(msg.ping)?.(msg); } });
-function kindOf(m) { return m.receipt ? "receipt" : m.ping ? "ping" : m.busy && typeof m.busy === "string" ? "busy" : m.error ? "error" : "answer"; }
+function kindOf(m) { return m.receipt ? "receipt" : m.alert ? "alert" : m.ping ? "ping" : m.busy && typeof m.busy === "string" ? "busy" : m.error ? "error" : "answer"; }
 function logEntry(dir, m) {
   const text = $("indent").checked ? JSON.stringify(m, null, 2) : JSON.stringify(m), bytes = utf8.encode(JSON.stringify(m)).length;
   total += bytes; count++;
@@ -723,8 +730,10 @@ async function sampleTask() {
   note("The latest commit has no build yet. Start one.");
   const r = await send({ action: "build", path: "/services/storefront" });
   if (r.feedback) return note("The build was refused: " + r.feedback.message);
-  const bpath = r.busy[0], bid = parts(bpath).pop();
-  note(`Waiting for ${r.receipt} to settle. Meanwhile the build is busy; anyone can observe its progress.`);
+  note(`The receipt doesn't say where the build is: doc/services/_/build.md says a new build appears under /services/storefront/builds, busy, marked with the receipt id. Look for it.`);
+  const list = await send({ action: "observe", path: "/services/storefront/builds" });
+  const bid = Object.keys(list.node).find(k => list.node[k]?.busy?.by === r.receipt), bpath = `/services/storefront/builds/${bid}`;
+  note(`It's ${bid}. Waiting for ${r.receipt} to settle; meanwhile anyone can observe its progress.`);
   await sleep(1500);
   await send({ action: "observe", path: bpath });
   const p = await waitPing(r.receipt);
@@ -736,7 +745,7 @@ async function sampleTask() {
   if (s.feedback) return note("Refused: " + s.feedback.message);
   const prod = await send({ action: "deploy", path: bpath, env: "production" });
   if (prod.feedback) return note("Refused: " + prod.feedback.message);
-  note("Production needs a person's approval (answer_by: person). Approve or reject it in the alert at the top of the page.");
+  note("The alert channel went off: production needs a person's approval (answer_by: person). Approve or reject it in the alert at the top of the page.");
   const pp = await waitPing(prod.receipt);
   if (pp.changed) { note(`Done. Production runs ${bid}.`); await send({ action: "observe", path: "/environments/production/running" }); }
   else note("Not deployed: it was rejected or expired. Reporting back.");

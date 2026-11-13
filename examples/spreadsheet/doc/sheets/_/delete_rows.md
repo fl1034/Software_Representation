@@ -7,6 +7,8 @@ Call: `{"action": "delete_rows", "path": "/sheets/<sheet id>", "at": 4, "count":
 - `at`: the first row to delete.
 - `count`: optional, default 1. At least one row must remain.
 
+Busy: the sheet, and every formula on other sheets that refers to it.
+
 Changes: the sheet's `rows`; deleted and moved cells; rewritten formula cells.
 
 Errors:

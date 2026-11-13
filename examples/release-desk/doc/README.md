@@ -19,8 +19,9 @@ which fields the app computes.
 once with what's in the tree, at any time, even while parts of it are busy.
 
 **Submissions** are every other action. Each one gets:
-1. a **receipt** at once: `{"receipt": "<id>"}`, plus `"busy": [<paths>]` for nodes that
-   are now busy and `"feedback"` if there's something to say;
+1. a **receipt** at once: `{"receipt": "<id>"}`, plus `"feedback"` if there's something to
+   say. Which nodes the action makes busy is in its doc, not in the receipt; observe to see
+   them;
 2. a **ping** once the app reaches its next well-defined state:
    `{"ping": "<id>", "version": <n>, "changed": [<paths>], "removed": [<paths>]}`, plus
    `"feedback"` if there's something to say. Empty lists are left out. A list stops at
@@ -43,12 +44,14 @@ when the app can count its work (`total` may be missing); progress sends no ping
 Submissions on a busy node get the error `busy`; listen for its ping and retry.
 If you listen (see `listen.md`), you're told when other submissions make nodes busy.
 
-**Alerts.** A submission that needs confirming makes its paths busy and puts an alert on
-the root, under `"alerts"`; your receipt carries it too. It says what will happen, who may
-answer (`answer_by`: `caller` or `person`), how many seconds are left (`expires_in`), and
-gives the `confirm` and `cancel` calls ready to send (see `confirm.md`, `cancel.md`).
-An alert about the whole app has only a message, and makes everything busy (`"busy": ["/"]`)
-until it ends.
+**Alerts.** You are always on the app's alert channel, from your first call; you can't
+leave it. It is silent until a submission needs a yes or no, or the whole app stops. Then
+you get `{"alert": {...}}` at once, whatever you listen to. An alert says what will happen,
+who may answer (`answer_by`: `caller` or `person`), how many seconds are left
+(`expires_in`), and gives the `confirm` and `cancel` calls ready to send (see `confirm.md`,
+`cancel.md`). Open alerts also stay at the root, under `"alerts"`. An alert about the whole
+app has only a message and makes everything busy (`"busy": ["/"]`); the channel tells you
+when it ends with `{"ping": "app", ...}`.
 
 Errors any submission can get: `unknown_action`, `bad_args`, `not_found`, `stale`, `busy`.
 Each action's doc lists its other errors.

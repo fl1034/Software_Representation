@@ -70,7 +70,20 @@
     ]
   },
   {
-    "note": "Priya changed something in the app herself. The agent hears it because it listens on /.",
+    "note": "Priya starts changing card k6 in the app herself. The agent listens on /, so it is told at once that k6 has no well-defined value for now.",
+    "receive": [
+      {"busy":"s55","paths":["/cards/k6"]}
+    ]
+  },
+  {
+    "note": "Observing k6 now gives its last value, marked busy, so the agent leaves k6 alone until Priya's change lands.",
+    "call": {"action":"observe","path":"/cards/k6"},
+    "receive": [
+      {"version":40,"node":{"busy":{"by":"s55","last":{"title":"Rate-limit the public API","labels":["l2"],"assignee":"u3","due":"2026-11-19"}}}}
+    ]
+  },
+  {
+    "note": "Priya's change lands. Same submission id, now settled.",
     "receive": [
       {"ping":"s55","version":41,"changed":["/cards/k6/due"]}
     ]

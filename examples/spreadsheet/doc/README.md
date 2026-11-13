@@ -41,6 +41,7 @@ has changed since version n.
 `"busy"`. A busy marker may include `"progress": {"done": <n>, "total": <n>, "message": "..."}`
 when the app can count its work (`total` may be missing); progress sends no ping.
 Submissions on a busy node get the error `busy`; listen for its ping and retry.
+If you listen (see `listen.md`), you're told when other submissions make nodes busy.
 
 Errors any submission can get: `unknown_action`, `bad_args`, `not_found`, `stale`, `busy`.
 Each action's doc lists its other errors.

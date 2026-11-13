@@ -97,14 +97,22 @@ A submission the app can't carry out (a full column, an unknown member, a bad ar
 is no exception. The receipt carries the error, the busy period lasts no time at all,
 and the ping reports that nothing changed. Errors are feedback, never part of the tree.
 
-The app sends the receipt and the ping whether anyone is listening or not. If the
-next state is ready before the receipt goes out, both come as one message, with the
-ping inside the receipt.
+Both moments are public. When nodes go busy, the app tells the caller in its receipt,
+and tells everyone listening on any of those paths with a busy event carrying the same
+submission id and paths. When they settle, the ping goes to the caller and to everyone
+listening, whether anyone is listening or not. So every agent can see when part of the
+tree stops having a well-defined value, not only the one that caused it.
+
+If the next state is ready before anything has been sent, the busy period was never
+visible: the caller gets receipt and ping as one message, with the ping inside the
+receipt, and listeners get only the ping.
 
 ```json
 {"action":"archive_all","path":"/columns/c4"}
 → {"receipt":"s57","busy":["/columns/c4","/cards/k8"]}
-   ... later, to anyone listening on those paths:
+   at the same moment, to anyone listening on those paths:
+  {"busy":"s57","paths":["/columns/c4","/cards/k8"]}
+   ... later, to the caller and anyone listening on those paths:
   {"ping":"s57","version":43,"changed":["/columns/c4/cards","/cards/k8/archived"]}
 
 {"action":"move","path":"/cards/k6","column":"c3"}
@@ -112,9 +120,10 @@ ping inside the receipt.
 ```
 
 Receipts don't repeat the call: the receipt answers the call just sent, and its id is
-what later pings refer to. Empty lists (`changed`, `removed`, `busy`) are left out.
-A list of paths stops at 100 and then gives the full count as `changed_total`,
-`removed_total` or `busy_total`; the agent observes with `since` for the rest.
+what the busy event and the ping refer to. Empty lists (`changed`, `removed`, `busy`,
+`paths`) are left out. A list of paths stops at 100 and then gives the full count as
+`changed_total`, `removed_total`, `busy_total` or `paths_total`; the agent observes for
+the rest.
 
 A ping names what changed, not the new values. To see them, observe with `since`
 (see 6), or observe the changed paths.
@@ -143,9 +152,10 @@ receipt with feedback `busy` naming the submission it is waiting on, then a ping
 nothing changed. The app doesn't queue it; the agent can listen and resubmit.
 
 **Waiting and listening.** `{"action":"listen","path":"/cards"}` subscribes to every
-ping that touches a path under `/cards`, including those caused by other people, other
-agents or timers. To wait for its own submission, an agent adds `"wait": true`; the app
-then holds the receipt until the ping and sends them as one message. How pings travel
+busy event and ping that touches a path under `/cards`, including those caused by other
+people, other agents or timers. An agent doesn't get a busy event for its own
+submission; its receipt already says the same. To wait for its own submission, an agent adds `"wait": true`; the app
+then holds the receipt until the ping and sends them as one message. How events travel
 (a socket, a stream, a long poll) is up to the app. An app that can't push still marks
 busy nodes, so the agent can poll with `observe`.
 

@@ -28,8 +28,10 @@ checklist and comments, plus archive, restore and permanent delete.
 - **Views.** The agent expands `/cards` and folds `/labels`. The app still folds
   `/columns` on its own to stay under budget, keeping its `api` visible, while the
   agent's own fold of `/labels` is bare.
-- **Pings from others.** The agent listens on `/` and hears Priya's change as a ping,
-  instead of discovering it through a `stale` error.
+- **Events from others.** The agent listens on `/`. When Priya starts changing a card,
+  it gets a busy event at once and leaves that card alone; when her change lands, it
+  gets the ping. It learns of her work from the app, not by hitting a `busy` or `stale`
+  error.
 
 ## Left out on purpose
 
@@ -45,7 +47,7 @@ drag and drop. All of it exists to help a person look at the board.
 
 ## Size
 
-The sample session's 21 messages total 6.8 KB. Before the compaction pass (no paths in
+The sample session's 23 messages total 6.9 KB. Before the compaction pass (no paths in
 the tree, no echoes, item docs, compact JSON) the same session was 9.5 KB compact, or
 16 KB indented. Part of today's figure is a better folding rule: the opening view now
 folds only `/columns`, the smallest node that keeps it under budget, so the agent sees

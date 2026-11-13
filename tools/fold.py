@@ -346,6 +346,11 @@ def receipt(submission, busy=None, feedback=None):
     return r
 
 
+def busy_event(submission, paths):
+    """What listeners get when a submission makes paths busy. The caller gets its receipt instead."""
+    return capped({"busy": submission}, "paths", paths)
+
+
 def settle(tree, log, submission, changes, feedback=None):
     """Restore busy nodes, apply the changes as the next well-defined state, return the ping."""
     for p in list(tree.get("busy", [])):

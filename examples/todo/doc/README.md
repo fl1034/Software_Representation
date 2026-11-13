@@ -39,5 +39,12 @@ when the app can count its work (`total` may be missing); progress sends no ping
 Submissions on a busy node get the error `busy`; listen for its ping and retry.
 If you listen (see `listen.md`), you're told when other submissions make nodes busy.
 
+**Alerts.** A submission that needs confirming makes its paths busy and puts an alert on
+the root, under `"alerts"`; your receipt carries it too. It says what will happen, who may
+answer (`answer_by`: `caller` or `person`), how many seconds are left (`expires_in`), and
+gives the `confirm` and `cancel` calls ready to send (see `confirm.md`, `cancel.md`).
+An alert about the whole app has only a message, and makes everything busy (`"busy": ["/"]`)
+until it ends.
+
 Errors any submission can get: `unknown_action`, `bad_args`, `not_found`, `stale`, `busy`.
 Each action's doc lists its other errors.

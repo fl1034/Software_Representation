@@ -136,23 +136,43 @@
     ]
   },
   {
+    "note": "Task: \"Delete the old pricing banner card for good.\" k9 is archived, so it can be deleted, but doc/cards/_/delete.md says deleting asks for confirmation. The receipt carries the alert; anyone observing / sees it at the top, and k9 is busy until someone answers.",
+    "call": {"action":"delete","path":"/cards/k9"},
+    "receive": [
+      {"receipt":"s59","busy":["/cards/k9"],"alert":{"by":"s59","message":"Deleting \"Old pricing page banner\" can't be undone.","answer_by":"caller","expires_in":300,"confirm":{"action":"confirm","path":"/","submission":"s59"},"cancel":{"action":"cancel","path":"/","submission":"s59"}}}
+    ]
+  },
+  {
+    "note": "The alert says the caller may answer, and deleting this card is exactly what was asked, so the agent confirms. The confirm itself changes nothing.",
+    "call": {"action":"confirm","path":"/","submission":"s59"},
+    "receive": [
+      {"receipt":"s60","ping":{"version":43}}
+    ]
+  },
+  {
+    "note": "The delete settles: its ping says the card was removed.",
+    "receive": [
+      {"ping":"s59","version":44,"removed":["/cards/k9"]}
+    ]
+  },
+  {
     "note": "Follow-up task: \"What is Priya working on?\" The agent reads doc/cards/find.md.",
     "call": {"action":"find","path":"/cards","where":{"assignee":"u2","archived":false}},
     "receive": [
-      {"version":43,"node":{"api":["find"],"*":{"api":["rename","set_description","set_labels","assign","set_due","move","archive","restore","delete","add_checklist_item","comment"],"checklist":{"*":{"api":["set_done","remove"]}},"comments":{"*":{}}},"k4":{"title":"Login fails with + in email","labels":["l1"],"assignee":"u2","due":"2026-11-10","overdue":true,"description":"Reported by two customers. Repro: sign up with a+b@example.com, then log in.","checklist":{"k4-i1":{"text":"Reproduce locally","done":true},"k4-i2":{"text":"Fix email normalisation","done":true},"k4-i3":{"text":"Add regression test","done":false}},"comments":{"k4-m4":{"author":"u2","text":"Found it: we URL-decode the address twice.","at":"2026-11-11"},"k4-m21":{"author":"u1","text":"Fixed and in review. Regression test still to do.","at":"2026-11-12"}}}}}
+      {"version":44,"node":{"api":["find"],"*":{"api":["rename","set_description","set_labels","assign","set_due","move","archive","restore","delete","add_checklist_item","comment"],"checklist":{"*":{"api":["set_done","remove"]}},"comments":{"*":{}}},"k4":{"title":"Login fails with + in email","labels":["l1"],"assignee":"u2","due":"2026-11-10","overdue":true,"description":"Reported by two customers. Repro: sign up with a+b@example.com, then log in.","checklist":{"k4-i1":{"text":"Reproduce locally","done":true},"k4-i2":{"text":"Fix email normalisation","done":true},"k4-i3":{"text":"Add regression test","done":false}},"comments":{"k4-m4":{"author":"u2","text":"Found it: we URL-decode the address twice.","at":"2026-11-11"},"k4-m21":{"author":"u1","text":"Fixed and in review. Regression test still to do.","at":"2026-11-12"}}}}}
     ]
   },
   {
     "call": {"action":"assign","path":"/cards/k1","assignee":"u7"},
     "receive": [
-      {"receipt":"s59","feedback":{"error":"unknown_member","message":"No member u7. Members: u1, u2, u3."},"ping":{"version":43}}
+      {"receipt":"s61","feedback":{"error":"unknown_member","message":"No member u7. Members: u1, u2, u3."},"ping":{"version":44}}
     ]
   },
   {
     "note": "What an answer looks like when a collection overflows. This board has 9 cards, so the limit is shown here at 3 instead of 100.",
     "call": {"action":"observe","path":"/cards"},
     "receive": [
-      {"version":43,"node":{"api":["find"],"*":{"api":["rename","set_description","set_labels","assign","set_due","move","archive","restore","delete","add_checklist_item","comment"],"checklist":{"*":{"api":["set_done","remove"]}},"comments":{"*":{}}},"k1":{"title":"Dark mode for settings page","labels":["l2","l3"]},"k2":{"title":"Upgrade build tooling","labels":["l4"],"assignee":"u3"},"k3":{"title":"Export board as CSV","labels":["l2"],"due":"2026-11-26"},"overflow":{"shown":3,"total":9,"next":{"action":"page","path":"/cards","after":"k3"}}}}
+      {"version":44,"node":{"api":["find"],"*":{"api":["rename","set_description","set_labels","assign","set_due","move","archive","restore","delete","add_checklist_item","comment"],"checklist":{"*":{"api":["set_done","remove"]}},"comments":{"*":{}}},"k1":{"title":"Dark mode for settings page","labels":["l2","l3"]},"k2":{"title":"Upgrade build tooling","labels":["l4"],"assignee":"u3"},"k3":{"title":"Export board as CSV","labels":["l2"],"due":"2026-11-26"},"overflow":{"shown":3,"total":8,"next":{"action":"page","path":"/cards","after":"k3"}}}}
     ]
   }
 ]

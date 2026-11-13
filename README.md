@@ -55,8 +55,10 @@ what it does, the exact JSON call, its arguments, what it changes and its error 
 The agent opens a doc only when it is about to use that action.
 
 Some things are true of every app, so they're never listed in any `api`:
-`observe`, `view` and `listen` on the root, and `page` on every collection. Their docs
-are `doc/observe.md`, `doc/view.md`, `doc/listen.md` and `doc/page.md`.
+`observe`, `view` and `listen` on the root, `page` on every collection, and `confirm`
+and `cancel` on the root for answering alerts (see 6). Their docs are
+`doc/observe.md`, `doc/view.md`, `doc/listen.md`, `doc/page.md`, `doc/confirm.md` and
+`doc/cancel.md`.
 
 `doc/README.md` covers what every call shares: queries and submissions, receipts and
 pings, common errors. The agent reads it first.
@@ -126,7 +128,7 @@ what the busy event and the ping refer to. Empty lists (`changed`, `removed`, `b
 the rest.
 
 A ping names what changed, not the new values. To see them, observe with `since`
-(see 6), or observe the changed paths.
+(see 7), or observe the changed paths.
 
 **Feedback** is `{"error": "<code>", "message": "..."}` for something that went wrong,
 or just `{"message": "..."}`. Messages are written for the agent and say what to do
@@ -159,7 +161,54 @@ then holds the receipt until the ping and sends them as one message. How events 
 (a socket, a stream, a long poll) is up to the app. An app that can't push still marks
 busy nodes, so the agent can poll with `observe`.
 
-### 6. `observe`, folding and views
+### 6. Alerts and confirmations
+
+A person is warned with a dialog that blocks the screen. Here a warning is a sticker on
+the tree, and what it blocks is shown the usual way: as busy nodes.
+
+**A submission that needs confirming.** Some submissions shouldn't go ahead without a
+second look, such as deleting something for good. The app makes the affected paths busy
+as for any submission, and puts an alert at the root, where everyone observing sees it:
+
+```json
+"alerts":[{"by":"s88","message":"Deleting Q1 Budget breaks 5 formulas on Summary: they would show #REF!. This can't be undone.",
+           "answer_by":"caller","expires_in":300,
+           "confirm":{"action":"confirm","path":"/","submission":"s88"},
+           "cancel":{"action":"cancel","path":"/","submission":"s88"}}]
+```
+
+- The caller's receipt carries the alert, and so does the busy event listeners get. A
+  submission sent with `"wait": true` gets its receipt at once with the alert: there is
+  nothing to wait for until someone answers.
+- `confirm` and `cancel` are built in on the root, and not listed in any `api`. They
+  are submissions that change nothing themselves: answering lets the original submission
+  settle, and its ping reports what happened. After `cancel`, that ping says nothing
+  changed.
+- `answer_by` says who may answer: `caller` (the agent that submitted it) or `person`
+  (only a person, through the app's own interface). This is how an app puts a person in
+  the loop for dangerous actions. Anyone else's answer is refused with the error
+  `not_yours`.
+- `expires_in` is how many seconds are left. If nobody answers in time, the submission
+  is cancelled and its ping says nothing changed.
+- Only the affected paths are busy. Everyone else carries on working; on a shared app,
+  one agent's pending delete doesn't freeze the others.
+
+**An alert about the whole app.** Some warnings concern everything: the app is
+restarting for an update, a licence has expired, a person is closing it with unsaved
+work. Then the whole tree goes busy at once and the alert has no answer, only a message:
+
+```json
+"busy":["/"],
+"alerts":[{"by":"app","message":"Restarting for an update. Back in about a minute."}]
+```
+
+Every submission meanwhile gets the error `busy`. When the alert ends, the app sends a
+ping with `"app"` in place of a submission id: `{"ping":"app","version":43}`.
+
+Alerts aren't data: like busy markers, they appear and disappear without changing the
+version.
+
+### 7. `observe`, folding and views
 
 ```json
 {"action":"observe","path":"/cards/k4"}
@@ -191,7 +240,7 @@ node to one of three views:
 - `fold`: shown as the barest summary, `{"folded":"4 children"}`, wherever it appears
   in an observation.
 - `expand`: shown in full. The app never folds it or anything inside it to save space;
-  only the overflow limit (see 7) still applies. Nodes above it aren't folded either,
+  only the overflow limit (see 8) still applies. Nodes above it aren't folded either,
   so it stays in sight.
 - `auto`: the default. The app decides, following the rule above.
 
@@ -218,7 +267,7 @@ stamps down to whatever was written. Once deletion markers older than a version 
 been thrown away, `since` for that version fails with `too_old`, and the agent
 observes without it.
 
-### 7. Long collections: `overflow`, `page` and `find`
+### 8. Long collections: `overflow`, `page` and `find`
 
 A collection never shows more than 100 children. When it has more, it shows the first
 100 and a note with the exact call for the next batch:
@@ -241,7 +290,7 @@ The note appears only when children are actually left out.
 Both answer in the same shape as `observe`. The child limit applies first, then
 folding keeps the answer under the size budget.
 
-### 8. Versions
+### 9. Versions
 
 The tree's `version` counts well-defined states: it goes up at each ping that changed
 something, and never while nodes are busy. Every query answer and ping carries it.
@@ -251,7 +300,8 @@ view of the tree, whoever changed it.
 
 ### Reserved keys
 
-`api`, `*`, `folded`, `overflow`, `busy`, and on the root `app`. They can't be used as ids.
+`api`, `*`, `folded`, `overflow`, `busy`, and on the root `app` and `alerts`. They can't be
+used as ids.
 
 ## Examples
 

@@ -26,8 +26,8 @@ Everything here is deliberately mechanical:
 """
 import argparse, copy, json
 
-RESERVED = {"app", "api", "*", "folded", "overflow", "busy"}
-NEVER_FOLD = {"app", "api", "overflow", "busy"}
+RESERVED = {"app", "api", "*", "folded", "overflow", "busy", "alerts"}
+NEVER_FOLD = {"app", "api", "overflow", "busy", "alerts"}
 LIST_CAP = 100  # most paths a ping, receipt or since-answer lists before giving a count
 
 
@@ -346,6 +346,17 @@ def receipt(submission, busy=None, feedback=None):
     return r
 
 
+def open_alert(tree, submission, paths, message, answer_by="caller", expires_in=300):
+    """A submission that needs confirming: its paths go busy and an alert goes on the root.
+    Returns the alert, which the receipt and the busy event both carry."""
+    mark_busy(tree, submission, paths)
+    alert = {"by": submission, "message": message, "answer_by": answer_by, "expires_in": expires_in,
+             "confirm": {"action": "confirm", "path": "/", "submission": submission},
+             "cancel": {"action": "cancel", "path": "/", "submission": submission}}
+    tree.setdefault("alerts", []).append(alert)
+    return alert
+
+
 def busy_event(submission, paths):
     """What listeners get when a submission makes paths busy. The caller gets its receipt instead."""
     return capped({"busy": submission}, "paths", paths)
@@ -361,6 +372,9 @@ def settle(tree, log, submission, changes, feedback=None):
             tree["busy"].remove(p)
     if not tree.get("busy"):
         tree.pop("busy", None)
+    tree["alerts"] = [a for a in tree.get("alerts", []) if a.get("by") != submission]
+    if not tree["alerts"]:
+        tree.pop("alerts")
     if changes:
         apply(tree, log, changes)
     ping = {"ping": submission, "version": tree["_version"]}

@@ -8,11 +8,11 @@ summary sheet that refers to it.
 
 - `state.json`: the workbook as the agent sees it, 1.7 KB. Small enough that
   `observe /` folds nothing.
-- `doc/`: 15 files. The general ones match the other examples; the rest cover sheets
+- `doc/`: 17 files. The general ones match the other examples; the rest cover sheets
   and cells. `doc/sheets/_/cells/_/README.md` explains how cells are written.
 - `exchange.json`: an agent corrects a figure and reports the new savings rate, adds a
-  budget row, renames a sheet, and meets a refused submission, an error value and a long
-  sheet. 15 steps, 5.7 KB.
+  budget row, renames a sheet, backs out of deleting a sheet, and meets a refused
+  submission, an error value and a long sheet. 18 steps, 6.1 KB.
 
 The engine that generated the state and session is a Python port of the app's own.
 On the starting workbook it agrees with the app on all 63 cells.
@@ -42,6 +42,10 @@ so it can't tell a typed 1247 from a computed one.
   row (`A8:F8`) without paging through the sheet.
 - **Batches.** `set` writes many cells in one submission, all or none. The agent
   added a whole budget row, formulas included, in one call.
+- **Confirmation.** Deleting a sheet asks first. Even with `wait`, the receipt comes
+  back at once, carrying an alert that says 5 formulas on Summary would break. The
+  sheet and those 5 cells are busy meanwhile; the rest of the workbook isn't. The agent
+  checks with the person and cancels, and the delete's ping reports nothing changed.
 - **Item docs.** The cell encoding and formula language are explained once, in the
   cells' item doc, instead of in every observation.
 

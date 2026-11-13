@@ -1,0 +1,422 @@
+{"version": 48213, "node": {
+  "app": "macOS",
+
+  "system": {
+    "name": "Alex's MacBook Pro", "hostname": "alexs-mbp.local",
+    "os": {"name": "macOS Tahoe", "version": "26.1", "build": "25B78"},
+    "booted": "2026-11-09T08:14:02-06:00", "now": "2026-11-13T02:41:17-06:00",
+    "timezone": "America/Chicago", "time_server": "time.apple.com", "boot_mode": "normal",
+    "console_user": "alex", "screen_locked": false, "language": "en-US", "region": "US"
+  },
+
+  "hardware": {
+    "model": {"name": "MacBook Pro (14-inch, M4, 2024)", "identifier": "Mac16,1", "serial": "F9K2XQ7L4M"},
+    "chip": {"name": "Apple M4", "arch": "arm64", "cpu_cores": {"performance": 4, "efficiency": 6}, "gpu_cores": 10, "neural_engine_cores": 16},
+    "memory": {"gb": 16, "type": "LPDDR5"},
+    "firmware": {"iboot": "13822.41.1", "secure_enclave": true},
+    "displays": {
+      "*": {"api": ["set_brightness", "set_resolution", "set_true_tone", "set_night_shift"]},
+      "builtin": {"name": "Built-in Liquid Retina XDR Display", "inches": 14.2, "pixels": [3024, 1964], "looks_like": [1512, 982],
+                  "refresh_hz": 120, "brightness": 0.72, "true_tone": true, "night_shift": false, "main": true}
+    },
+    "ports": {
+      "magsafe": {"connected": false},
+      "thunderbolt_1": {"connected": "Samsung PSSD T7", "speed": "USB 3.2 Gen 2, 10 Gb/s", "disk": "disk4"},
+      "thunderbolt_2": {"connected": false}, "thunderbolt_3": {"connected": false},
+      "hdmi": {"connected": false}, "sdxc": {"card": false}, "headphone": {"connected": false}
+    },
+    "input": {"keyboard": {"layout": "U.S.", "backlight": 0.4}, "trackpad": {"force_click": true, "tap_to_click": true},
+              "touch_id": {"fingerprints": 2}, "camera": {"name": "MacBook Pro Camera", "in_use_by": []},
+              "microphone": {"in_use_by": []}},
+    "sensors": {"lid": "open", "ambient_light": true, "fans": {"0": {"rpm": 0}}}
+  },
+
+  "load": {
+    "cpu": {"user_pct": 6.1, "system_pct": 3.4, "idle_pct": 90.5, "load_avg": [1.82, 2.10, 2.35]},
+    "memory": {"used_gb": 11.3, "app_gb": 6.9, "wired_gb": 2.1, "compressed_gb": 2.3, "cached_files_gb": 4.4, "swap_used_gb": 0.8, "pressure": "normal"},
+    "gpu": {"utilization_pct": 7},
+    "thermal_pressure": "nominal",
+    "top_energy": ["/processes/1431", "/processes/389", "/processes/2301"]
+  },
+
+  "power": {
+    "api": ["sleep", "restart", "shut_down", "log_out", "lock_screen"],
+    "source": "battery",
+    "battery": {"percent": 64, "state": "discharging", "minutes_left": 412, "cycle_count": 187, "max_capacity_pct": 93,
+                "condition": "normal", "design_wh": 72.4, "optimized_charging": true},
+    "low_power_mode": "never",
+    "settings": {
+      "*": {"*": {"api": ["set"]}},
+      "battery": {"displaysleep": 2, "sleep": 1, "disksleep": 10, "powernap": 0, "hibernatemode": 3, "standby": 1, "tcpkeepalive": 1},
+      "ac": {"displaysleep": 10, "sleep": 1, "disksleep": 10, "powernap": 1, "hibernatemode": 3, "standby": 1, "tcpkeepalive": 1, "womp": 1}
+    },
+    "sleep_blockers": {
+      "*": {},
+      "a71": {"type": "PreventUserIdleSystemSleep", "by": "/processes/318", "reason": "Time Machine backup"},
+      "a74": {"type": "PreventUserIdleDisplaySleep", "by": "/processes/1423", "reason": "Video is playing"}
+    },
+    "last_wake": {"at": "2026-11-12T18:02:11-06:00", "reason": "lid opened"}
+  },
+
+  "storage": {
+    "disks": {
+      "*": {"api": ["eject", "erase", "first_aid"]},
+      "disk0": {"name": "APPLE SSD AP0512Z", "internal": true, "bus": "Apple Fabric", "size_gb": 500.3, "smart": "verified",
+                "partitions": {"disk0s1": {"type": "Apple_APFS_ISC", "size_gb": 0.5, "container": "disk1"},
+                               "disk0s2": {"type": "Apple_APFS", "size_gb": 494.4, "container": "disk3"},
+                               "disk0s3": {"type": "Apple_APFS_Recovery", "size_gb": 5.4, "container": "disk2"}}},
+      "disk4": {"name": "Samsung PSSD T7", "internal": false, "bus": "USB", "size_gb": 1000.2,
+                "partitions": {"disk4s1": {"type": "EFI", "size_gb": 0.2}, "disk4s2": {"type": "Apple_APFS", "size_gb": 1000.0, "container": "disk5"}}}
+    },
+    "containers": {
+      "*": {"api": ["add_volume", "resize"]},
+      "disk1": {"store": "disk0s1", "size_gb": 0.5, "purpose": "iBoot system container", "volumes": ["disk1s1", "disk1s2", "disk1s3"]},
+      "disk2": {"store": "disk0s3", "size_gb": 5.4, "purpose": "system recovery", "volumes": ["disk2s1", "disk2s2"]},
+      "disk3": {"store": "disk0s2", "size_gb": 494.4, "free_gb": 211.7, "volumes": ["disk3s1", "disk3s2", "disk3s3", "disk3s4", "disk3s5"]},
+      "disk5": {"store": "disk4s2", "size_gb": 1000.0, "free_gb": 588.1, "volumes": ["disk5s1"]}
+    },
+    "volumes": {
+      "*": {"api": ["mount", "unmount", "rename", "delete", "create_snapshot"]},
+      "disk3s1": {"name": "Macintosh HD", "role": "system", "used_gb": 11.2, "sealed": true, "read_only": true,
+                  "mounted_snapshot": {"device": "disk3s1s1", "name": "com.apple.os.update-3B2E9D61", "at": "/"}},
+      "disk3s5": {"name": "Data", "role": "data", "used_gb": 262.9, "mount": "/System/Volumes/Data", "filevault": "unlocked", "case_sensitive": false,
+                  "firmlinks": ["/Users", "/Applications", "/Library", "/private", "/opt", "/usr/local", "/cores"],
+                  "snapshots": ["com.apple.TimeMachine.2026-11-12-221533.local", "com.apple.TimeMachine.2026-11-13-011504.local"]},
+      "disk3s2": {"name": "Preboot", "role": "preboot", "used_gb": 7.1, "mount": "/System/Volumes/Preboot"},
+      "disk3s3": {"name": "Recovery", "role": "recovery", "used_gb": 1.2, "mount": null},
+      "disk3s4": {"name": "VM", "role": "vm", "used_gb": 1.0, "mount": "/System/Volumes/VM", "holds": "swap files"},
+      "disk5s1": {"name": "Backup", "role": "backup", "used_gb": 411.9, "mount": "/Volumes/Backup", "encrypted": "unlocked", "case_sensitive": true},
+      "overflow": {"shown": 6, "total": 11, "next": {"action": "page", "path": "/storage/volumes", "after": "disk5s1"}}
+    },
+    "disk_images": {"*": {"api": ["eject"]}},
+    "network_mounts": {"*": {"api": ["unmount"]}}
+  },
+
+  "files": {
+    "api": ["find"],
+    "*": {"api": ["read", "write", "rename", "move", "copy", "trash", "delete", "set_permissions", "set_tags", "create_folder", "find"]},
+    ".": {"kind": "dir", "owner": "root", "mode": "drwxr-xr-x", "volume": "disk3s1"},
+    "Applications": {"folded": "61 children, 28.4 MB"},
+    "Library": {"folded": "67 children, 61.9 MB"},
+    "System": {"folded": "7 children, 142.0 MB"},
+    "Users": {
+      ".": {"kind": "dir", "owner": "root", "group": "admin", "mode": "drwxr-xr-x"},
+      "Shared": {"folded": "4 children, 0.6 KB"},
+      "alex": {
+        ".": {"kind": "dir", "owner": "alex", "mode": "drwxr-x---", "size_gb": 187.2},
+        "Desktop": {"folded": "9 children, 1.1 KB"},
+        "Documents": {
+          ".": {"kind": "dir", "owner": "alex", "mode": "drwx------", "privacy": "files_documents"},
+          "Taxes 2025": {"folded": "14 children, 2.1 KB"},
+          "Budget.numbers": {"size": 482113, "modified": "2026-11-10T19:02:44-06:00", "type": "com.apple.iwork.numbers.sffnumbers", "tags": ["Green"]},
+          "lease.pdf": {"size": 1203888, "modified": "2026-09-02T11:47:09-05:00", "type": "com.adobe.pdf",
+                        "downloaded": {"from": "https://portal.example-rentals.com/lease.pdf", "by": "com.apple.Safari", "quarantine": "cleared"}},
+          "notes.txt": {"size": 2210, "modified": "2026-11-12T23:58:31-06:00", "type": "public.plain-text", "open_in": ["/desktop/windows/9140"]},
+          ".DS_Store": {"size": 6148, "modified": "2026-11-12T23:58:40-06:00", "hidden": true}
+        },
+        "Downloads": {"folded": "38 children, 5.2 KB"},
+        "Library": {"folded": "74 children, 96.3 MB"},
+        "Code": {"folded": "6 children, 71.8 MB"},
+        "overflow": {"shown": 5, "total": 14, "next": {"action": "page", "path": "/files/Users/alex", "after": "Code"}}
+      }
+    },
+    "Volumes": {"folded": "2 children, 0.3 KB"},
+    "bin": {"folded": "39 children, 3.4 KB"},
+    "etc": {"kind": "link", "to": "private/etc"},
+    "opt": {"folded": "1 child, 18.6 MB"},
+    "private": {"folded": "4 children, 11.2 MB"},
+    "tmp": {"kind": "link", "to": "private/tmp"},
+    "usr": {"folded": "7 children, 39.7 MB"},
+    "var": {"kind": "link", "to": "private/var"},
+    "overflow": {"shown": 12, "total": 22, "next": {"action": "page", "path": "/files", "after": "var"}}
+  },
+
+  "processes": {
+    "api": ["find"],
+    "*": {"api": ["signal", "sample", "set_priority"]},
+    "0": {"name": "kernel_task", "user": "root", "cpu_pct": 2.9, "mem_mb": 486, "threads": 612, "started": "2026-11-09T08:14:02-06:00"},
+    "1": {"name": "launchd", "user": "root", "parent": "0", "path": "/sbin/launchd", "cpu_pct": 0.1, "mem_mb": 24, "threads": 4},
+    "318": {"name": "backupd", "user": "root", "parent": "1", "path": "/System/Library/CoreServices/backupd.bundle/Contents/Resources/backupd",
+            "cpu_pct": 3.8, "mem_mb": 96, "service": "/services/system/com.apple.backupd"},
+    "389": {"name": "WindowServer", "user": "_windowserver", "parent": "1",
+            "path": "/System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer",
+            "cpu_pct": 4.1, "mem_mb": 912, "threads": 24, "service": "/services/system/com.apple.WindowServer"},
+    "655": {"name": "Finder", "user": "alex", "parent": "1", "app": "com.apple.finder", "cpu_pct": 0.0, "mem_mb": 188},
+    "1423": {"name": "Safari", "user": "alex", "parent": "1", "app": "com.apple.Safari", "cpu_pct": 1.2, "mem_mb": 310, "threads": 19, "sandboxed": true},
+    "1431": {"name": "Safari Web Content", "user": "alex", "parent": "1", "responsible": "1423", "cpu_pct": 11.6, "mem_mb": 742, "sandboxed": true,
+             "path": "/System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent"},
+    "2214": {"name": "zsh", "user": "alex", "parent": "2212", "responsible": "2210", "path": "/bin/zsh", "tty": "ttys000",
+             "cwd": "/Users/alex/Code/shop", "state": "sleeping", "mem_mb": 6},
+    "2301": {"name": "com.docker.virtualization", "user": "alex", "responsible": "2290", "cpu_pct": 5.4, "mem_mb": 2148, "threads": 31},
+    "overflow": {"shown": 9, "total": 612, "next": {"action": "page", "path": "/processes", "after": "2301"}}
+  },
+
+  "services": {
+    "*": {"api": ["find"], "*": {"api": ["start", "stop", "restart", "enable", "disable"]}},
+    "system": {
+      "com.apple.WindowServer": {"state": "running", "pid": "389", "plist": "/System/Library/LaunchDaemons/com.apple.WindowServer.plist", "keep_alive": true},
+      "com.apple.mDNSResponder": {"state": "running", "pid": "211", "plist": "/System/Library/LaunchDaemons/com.apple.mDNSResponder.plist",
+                                  "user": "_mdnsresponder", "sockets": ["udp:5353"]},
+      "com.apple.backupd": {"state": "running", "pid": "318", "plist": "/System/Library/LaunchDaemons/com.apple.backupd.plist", "on_demand": true},
+      "com.openssh.sshd": {"state": "not running", "enabled": false, "plist": "/System/Library/LaunchDaemons/ssh.plist", "sockets": ["tcp:22"], "on_demand": true},
+      "com.docker.vmnetd": {"state": "running", "pid": "702", "plist": "/Library/LaunchDaemons/com.docker.vmnetd.plist", "third_party": true,
+                            "program": "/Library/PrivilegedHelperTools/com.docker.vmnetd"},
+      "overflow": {"shown": 5, "total": 418, "next": {"action": "page", "path": "/services/system", "after": "com.docker.vmnetd"}}
+    },
+    "gui": {
+      "501": {
+        "com.apple.Dock.agent": {"state": "running", "pid": "651", "plist": "/System/Library/LaunchAgents/com.apple.Dock.plist", "keep_alive": true},
+        "com.apple.Finder": {"state": "running", "pid": "655", "plist": "/System/Library/LaunchAgents/com.apple.Finder.plist"},
+        "com.apple.pboard": {"state": "running", "pid": "640", "plist": "/System/Library/LaunchAgents/com.apple.pboard.plist"},
+        "homebrew.mxcl.postgresql@16": {"state": "running", "pid": "988", "plist": "/Users/alex/Library/LaunchAgents/homebrew.mxcl.postgresql@16.plist",
+                                        "third_party": true, "program": "/opt/homebrew/opt/postgresql@16/bin/postgres", "last_exit": 0},
+        "overflow": {"shown": 4, "total": 391, "next": {"action": "page", "path": "/services/gui/501", "after": "homebrew.mxcl.postgresql@16"}}
+      }
+    },
+    "login_items": {
+      "*": {"api": ["allow", "deny", "remove"]},
+      "com.docker.docker": {"name": "Docker", "kind": "app", "opens_at_login": true},
+      "com.docker.vmnetd": {"name": "Docker Inc", "kind": "daemon", "allowed": true, "runs": "/services/system/com.docker.vmnetd"},
+      "homebrew.mxcl.postgresql@16": {"name": "postgres", "kind": "agent", "allowed": true, "developer": "unidentified"}
+    }
+  },
+
+  "apps": {
+    "api": ["find", "install"],
+    "*": {"api": ["launch", "quit", "force_quit", "uninstall"]},
+    "com.apple.Safari": {"name": "Safari", "version": "26.1", "path": "/Applications/Safari.app", "source": "apple", "in_cryptex": true, "running": ["1423"]},
+    "com.apple.finder": {"name": "Finder", "version": "26.1", "path": "/System/Library/CoreServices/Finder.app", "source": "apple", "running": ["655"]},
+    "com.apple.Terminal": {"name": "Terminal", "version": "2.15", "path": "/System/Applications/Utilities/Terminal.app", "source": "apple", "running": ["2210"]},
+    "com.apple.dt.Xcode": {"name": "Xcode", "version": "26.1", "path": "/Applications/Xcode.app", "source": "app_store", "size_gb": 12.4, "running": ["1877"]},
+    "com.docker.docker": {"name": "Docker", "version": "4.51.0", "path": "/Applications/Docker.app", "source": "identified_developer",
+                          "team": "9BNSXJN65R", "notarized": true, "running": ["2290"]},
+    "com.microsoft.VSCode": {"name": "Visual Studio Code", "version": "1.105.1", "path": "/Applications/Visual Studio Code.app",
+                             "source": "identified_developer", "team": "UBF8T346G9", "notarized": true},
+    "overflow": {"shown": 6, "total": 143, "next": {"action": "page", "path": "/apps", "after": "com.microsoft.VSCode"}}
+  },
+
+  "desktop": {
+    "frontmost": "com.apple.Safari", "appearance": "dark",
+    "spaces": {
+      "*": {"api": ["switch_to"]},
+      "1": {"display": "builtin", "kind": "desktop", "current": true},
+      "2": {"display": "builtin", "kind": "fullscreen", "app": "com.apple.dt.Xcode"}
+    },
+    "windows": {
+      "*": {"api": ["focus", "move", "resize", "minimize", "close", "move_to_space"]},
+      "8841": {"app": "com.apple.Safari", "title": "URLSession | Apple Developer Documentation", "space": "1", "frame": [120, 64, 1280, 860], "tabs": 7},
+      "9012": {"app": "com.apple.Terminal", "title": "shop — zsh — 120×32", "space": "1", "frame": [40, 420, 980, 520], "process": "2214"},
+      "9120": {"app": "com.apple.dt.Xcode", "title": "shop — CartView.swift", "space": "2", "fullscreen": true,
+               "document": "/files/Users/alex/Code/shop/CartView.swift", "unsaved_changes": true},
+      "9140": {"app": "com.apple.TextEdit", "title": "notes.txt", "space": "1", "minimized": true, "document": "/files/Users/alex/Documents/notes.txt"}
+    }
+  },
+
+  "users": {
+    "accounts": {
+      "*": {"api": ["set_password", "set_admin", "delete"]},
+      "alex": {"uid": 501, "gid": 20, "full_name": "Alex Rivera", "home": "/Users/alex", "shell": "/bin/zsh", "admin": true,
+               "groups": ["staff", "admin", "_developer", "_lpadmin"], "logged_in": true, "secure_token": true, "unlocks_filevault": true},
+      "root": {"uid": 0, "gid": 0, "full_name": "System Administrator", "home": "/var/root", "shell": "/bin/sh", "login": "disabled"},
+      "Guest": {"uid": 201, "enabled": false},
+      "overflow": {"shown": 3, "total": 134, "next": {"action": "page", "path": "/users/accounts", "after": "Guest"}}
+    },
+    "groups": {"folded": "148 children, 9.8 KB"},
+    "login_window": {"auto_login": false, "show": "list of users", "guest": false, "fast_user_switching": false}
+  },
+
+  "security": {
+    "system_integrity_protection": {"enabled": true, "signed_system_volume": true},
+    "startup_security": {"policy": "full", "allow_third_party_kernel_extensions": false},
+    "gatekeeper": {"enabled": true, "allow_apps_from": "app_store_and_identified_developers"},
+    "filevault": {"enabled": true, "recovery_key": "set", "unlock_users": ["alex"]},
+    "firewall": {"enabled": true, "block_all_incoming": false, "stealth_mode": true,
+                 "apps": {"*": {"api": ["allow", "block", "remove"]},
+                          "com.docker.docker": {"incoming": "allow"}, "com.apple.Safari": {"incoming": "allow", "signed_by": "apple"}}},
+    "xprotect": {"definitions": "5321", "remediator": "156", "last_scan": "2026-11-12T14:20:55-06:00"},
+    "lockdown_mode": false,
+    "screen_lock": {"require_password_after_s": 0, "screen_saver_after_min": 5},
+    "touch_id": {"unlock": true, "apple_pay": true, "autofill": true, "sudo": false},
+    "find_my": {"enabled": true, "activation_lock": true},
+    "privacy": {
+      "*": {"clients": {"*": {"api": ["allow", "deny", "reset"]}}},
+      "camera": {"service": "kTCCServiceCamera", "clients": {"us.zoom.xos": {"allowed": true}, "com.apple.FaceTime": {"allowed": true}}},
+      "microphone": {"service": "kTCCServiceMicrophone", "clients": {"us.zoom.xos": {"allowed": true}, "com.microsoft.VSCode": {"allowed": false}}},
+      "screen_recording": {"service": "kTCCServiceScreenCapture", "clients": {"us.zoom.xos": {"allowed": true, "last_used": "2026-11-11T10:02:19-06:00"}}},
+      "accessibility": {"service": "kTCCServiceAccessibility", "clients": {"com.apple.Terminal": {"allowed": false}}},
+      "full_disk_access": {"service": "kTCCServiceSystemPolicyAllFiles", "clients": {"com.apple.Terminal": {"allowed": false}, "com.docker.docker": {"allowed": true}}},
+      "files_documents": {"service": "kTCCServiceSystemPolicyDocumentsFolder",
+                          "clients": {"com.microsoft.VSCode": {"allowed": true},
+                                      "com.apple.Terminal": {"busy": {"by": "s48190"}}}},
+      "automation": {"service": "kTCCServiceAppleEvents", "clients": {"com.apple.Terminal": {"allowed": true, "may_control": ["com.apple.finder"]}}},
+      "overflow": {"shown": 7, "total": 23, "next": {"action": "page", "path": "/security/privacy", "after": "automation"}}
+    },
+    "keychains": {
+      "*": {"api": ["lock", "unlock", "find"]},
+      "login": {"path": "/Users/alex/Library/Keychains/login.keychain-db", "locked": false, "items": 412},
+      "System": {"path": "/Library/Keychains/System.keychain", "locked": false, "items": 38},
+      "iCloud": {"synced": true, "items": 903}
+    },
+    "trusted_root_certificates": {"folded": "153 children, 41.2 KB"}
+  },
+
+  "network": {
+    "primary": "en0", "reachable": true,
+    "interfaces": {
+      "*": {"api": ["enable", "disable", "renew_dhcp", "set_addresses"]},
+      "lo0": {"kind": "loopback", "up": true, "ipv4": ["127.0.0.1/8"], "ipv6": ["::1/128"], "mtu": 16384},
+      "en0": {"kind": "wifi", "service": "Wi-Fi", "up": true, "mac": "a6:3c:f1:08:5d:2e", "private_address": "rotating",
+              "ipv4": ["192.168.1.42/24"], "ipv6": ["fe80::1c7a:44ff:fe2b:9d01/64"], "router": "192.168.1.1", "mtu": 1500,
+              "dhcp": {"server": "192.168.1.1", "lease_ends": "2026-11-13T18:02:15-06:00"},
+              "wifi": {"ssid": "Rivera-5G", "security": "WPA3 Personal", "channel": 149, "band_ghz": 5, "width_mhz": 80,
+                       "phy": "802.11ax", "rssi_dbm": -54, "noise_dbm": -92, "tx_rate_mbps": 1200}},
+      "en1": {"kind": "thunderbolt", "up": false}, "en2": {"kind": "thunderbolt", "up": false}, "en3": {"kind": "thunderbolt", "up": false},
+      "bridge0": {"kind": "bridge", "service": "Thunderbolt Bridge", "members": ["en1", "en2", "en3"], "up": false},
+      "awdl0": {"kind": "awdl", "up": true, "used_for": ["AirDrop", "AirPlay", "Handoff"]},
+      "utun0": {"kind": "tunnel", "up": true, "used_for": ["system"]},
+      "overflow": {"shown": 8, "total": 17, "next": {"action": "page", "path": "/network/interfaces", "after": "utun0"}}
+    },
+    "service_order": ["Wi-Fi", "Thunderbolt Bridge", "Work VPN"],
+    "dns": {"servers": ["192.168.1.1"], "search_domains": ["lan"], "multicast": "local via mDNSResponder"},
+    "routes": {"default": {"gateway": "192.168.1.1", "interface": "en0"}, "others": 41},
+    "proxies": {},
+    "wifi": {"power": true, "known_networks": {"folded": "23 children, 2.9 KB"}, "ask_to_join_hotspots": false},
+    "vpn": {"*": {"api": ["connect", "disconnect", "remove"]},
+            "Work VPN": {"type": "IKEv2", "server": "vpn.example.com", "connected": false, "on_demand": false}},
+    "sharing": {"*": {"api": ["set"]},
+                "remote_login": false, "screen_sharing": false, "file_sharing": false, "remote_management": false,
+                "internet_sharing": false, "content_caching": false, "airplay_receiver": true, "airdrop": "contacts_only"},
+    "listening": {"*": {},
+                  "tcp:5000": {"process": "/processes/661", "name": "ControlCenter", "for": "AirPlay Receiver", "address": "*"},
+                  "tcp:5432": {"process": "/processes/988", "name": "postgres", "address": "127.0.0.1"},
+                  "udp:5353": {"process": "/processes/211", "name": "mDNSResponder", "address": "*"}},
+    "connections": {"folded": "214 children, 38.0 KB"}
+  },
+
+  "bluetooth": {
+    "api": ["set_power"], "power": true, "discoverable": false,
+    "devices": {
+      "*": {"api": ["connect", "disconnect", "forget"]},
+      "4c-b9-10-2e-7a-c1": {"name": "Alex's AirPods Pro", "kind": "headphones", "connected": true, "battery": {"left": 82, "right": 80, "case": 61}},
+      "d0-c0-50-91-3f-08": {"name": "Magic Mouse", "kind": "mouse", "connected": false, "last_connected": "2026-11-07T17:44:02-06:00"}
+    }
+  },
+
+  "audio": {
+    "api": ["set_volume", "set_muted", "set_output", "set_input"],
+    "output": "airpods-4c-b9-10-2e-7a-c1", "input": "builtin-microphone", "volume": 0.45, "muted": false, "alert_volume": 0.6,
+    "devices": {
+      "*": {},
+      "builtin-speakers": {"name": "MacBook Pro Speakers", "direction": "output", "channels": 2, "sample_rate": 48000},
+      "builtin-microphone": {"name": "MacBook Pro Microphone", "direction": "input", "channels": 1, "sample_rate": 48000},
+      "airpods-4c-b9-10-2e-7a-c1": {"name": "Alex's AirPods Pro", "direction": "output", "transport": "bluetooth", "bluetooth": "/bluetooth/devices/4c-b9-10-2e-7a-c1"}
+    },
+    "now_playing": {"app": "com.apple.Safari", "title": "WWDC session video", "state": "playing"}
+  },
+
+  "printers": {
+    "api": ["add"],
+    "*": {"api": ["print", "pause", "resume", "set_default", "remove"]},
+    "HP_OfficeJet_Pro_9010": {"name": "HP OfficeJet Pro 9010", "uri": "ipps://HP-OfficeJet-9010.local.:631/ipp/print", "driver": "AirPrint",
+                              "default": true, "state": "idle", "jobs": {"*": {"api": ["cancel"]}}}
+  },
+
+  "settings": {
+    "api": ["find"],
+    "*": {"*": {"api": ["set", "reset"]}},
+    "NSGlobalDomain": {"AppleInterfaceStyle": "Dark", "AppleShowAllExtensions": true, "AppleLanguages": ["en-US"], "AppleLocale": "en_US",
+                       "KeyRepeat": 2, "InitialKeyRepeat": 15, "com.apple.swipescrolldirection": true, "NSAutomaticSpellingCorrectionEnabled": false},
+    "com.apple.dock": {"autohide": true, "tilesize": 48, "orientation": "bottom", "show-recents": false, "mru-spaces": false,
+                       "persistent-apps": {"folded": "11 items, 3.2 KB"}},
+    "com.apple.finder": {"ShowPathbar": true, "FXPreferredViewStyle": "Nlsv", "AppleShowAllFiles": false, "FXDefaultSearchScope": "SCcf", "NewWindowTarget": "PfHm"},
+    "com.apple.screencapture": {"location": "/Users/alex/Screenshots", "type": "png", "show-thumbnail": true},
+    "overflow": {"shown": 4, "total": 412, "next": {"action": "page", "path": "/settings", "after": "com.apple.screencapture"}}
+  },
+
+  "software": {
+    "api": ["check_for_updates"],
+    "os": {"name": "macOS Tahoe", "version": "26.1", "build": "25B78", "kernel": "Darwin 25.1.0"},
+    "rosetta": {"installed": true},
+    "command_line_tools": {"version": "26.1"},
+    "updates": {
+      "auto_check": true, "auto_download": true, "auto_install_os": false, "auto_install_security_responses": true,
+      "last_check": "2026-11-13T01:10:44-06:00",
+      "available": {
+        "*": {"api": ["install", "cancel_download"]},
+        "macOS-26.2": {"busy": {"by": "s48122", "progress": {"done": 1.9, "total": 3.4, "message": "Downloading: 1.9 GB of 3.4 GB"},
+                                "cancel": {"action": "cancel", "path": "/", "submission": "s48122"},
+                                "last": {"name": "macOS Tahoe 26.2", "size_gb": 3.4, "needs_restart": true, "downloaded": false}}}
+      }
+    },
+    "installed_packages": {"folded": "312 children, 44.5 KB"}
+  },
+
+  "backup": {
+    "api": ["start", "stop", "restore"],
+    "enabled": true, "automatic": "hourly",
+    "destinations": {"*": {"api": ["remove"]},
+                     "Backup": {"volume": "/storage/volumes/disk5s1", "kind": "local", "encrypted": true,
+                                "last_backup": "2026-11-12T22:15:33-06:00", "oldest_backup": "2026-03-02T09:11:20-06:00"}},
+    "current": {"busy": {"by": "s48155", "progress": {"done": 18.2, "total": 24.6, "message": "Backing up: 18.2 GB of 24.6 GB"},
+                         "cancel": {"action": "cancel", "path": "/", "submission": "s48155"},
+                         "last": {"state": "idle"}}},
+    "exclusions": ["/Users/alex/Code/shop/node_modules", "/Users/alex/Library/Containers/com.docker.docker"]
+  },
+
+  "search": {
+    "api": ["reindex"],
+    "indexing": {"/": {"enabled": true, "state": "idle"}, "/Volumes/Backup": {"enabled": false}},
+    "excluded_from_results": ["/Users/alex/Code/shop/node_modules"]
+  },
+
+  "logs": {
+    "api": ["find"],
+    "unified_log": {"api": ["find"], "folded": "about 40 million entries, 2.1 GB. Use find with a time range."},
+    "crash_reports": {
+      "*": {"api": ["read", "delete"]},
+      "Safari-2026-11-08-141202.ips": {"process": "Safari", "kind": "crash", "exception": "EXC_BAD_ACCESS (SIGSEGV)", "at": "2026-11-08T14:12:02-06:00"},
+      "com.docker.backend-2026-11-11-093417.diag": {"process": "com.docker.backend", "kind": "cpu_resource", "at": "2026-11-11T09:34:17-06:00"}
+    },
+    "kernel_panics": {"*": {}}
+  },
+
+  "kernel": {
+    "version": "Darwin Kernel Version 25.1.0; root:xnu-12377.41.6~2/RELEASE_ARM64_T8132",
+    "boot_args": "",
+    "third_party_kernel_extensions": {"*": {}},
+    "system_extensions": {
+      "*": {"api": ["approve", "remove"]},
+      "io.tailscale.ipn.macsys.network-extension": {"team": "W5364U7YZB", "kind": "network", "state": "activated, enabled", "version": "1.90.6"}
+    },
+    "sysctl": {"folded": "1610 children, 61.3 KB"},
+    "nvram": {"auto-boot": "true", "boot-args": "", "SystemAudioVolume": "%80"}
+  },
+
+  "clipboard": {
+    "api": ["set", "clear"],
+    "changed": "2026-11-13T02:36:50-06:00", "from": "com.apple.Terminal",
+    "types": ["public.utf8-plain-text"], "text": "brew services restart postgresql@16", "universal_clipboard": true
+  },
+
+  "notifications": {
+    "focus": {"active": null, "scheduled": {"Sleep": {"from": "23:00", "to": "07:00", "days": "every day", "suppressed_tonight": true}}},
+    "pending": {
+      "*": {"api": ["open", "dismiss"]},
+      "n4411": {"app": "com.apple.iCal", "title": "Standup", "body": "Today at 9:30 AM", "at": "2026-11-13T02:30:00-06:00"},
+      "n4409": {"app": "com.apple.TimeMachine", "title": "Backup in progress", "at": "2026-11-13T02:15:07-06:00"}
+    }
+  },
+
+  "accounts": {
+    "apple_account": {"signed_in": true, "id": "alex.rivera@icloud.com",
+                      "icloud": {"drive": true, "desktop_and_documents": false, "photos": true, "passwords": true, "private_relay": true,
+                                 "storage_gb": {"used": 141, "total": 200}}},
+    "internet_accounts": {"*": {"api": ["remove"]}, "Work (Exchange)": {"mail": true, "calendars": true, "contacts": false}}
+  },
+
+  "busy": ["/security/privacy/files_documents/clients/com.apple.Terminal", "/software/updates/available/macOS-26.2", "/backup/current"],
+  "alerts": [
+    {"by": "s48190", "message": "\"Terminal\" would like to access files in your Documents folder.", "answer_by": "person",
+     "confirm": {"action": "confirm", "path": "/", "submission": "s48190"}, "cancel": {"action": "cancel", "path": "/", "submission": "s48190"}}
+  ]
+}}

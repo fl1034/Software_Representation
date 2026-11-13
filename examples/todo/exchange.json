@@ -2,31 +2,46 @@
   {
     "note": "The whole list fits in one reply; nothing is folded.",
     "call": {"action": "observe", "path": "/"},
-    "reply": {"ok": true, "path": "/", "action": "observe", "version": 12, "node": {"app": "Tasks", "version": 12, "docs": "doc/README.md", "api": ["observe"], "tasks": {"path": "/tasks", "api": ["add", "clear_done", "undo", "page", "find"], "*": {"path": "/tasks/<task id>", "api": ["rename", "set_done", "delete"]}, "1": {"title": "Buy milk", "done": true}, "2": {"title": "Email the landlord about the radiator", "done": true}, "3": {"title": "Book dentist appointment", "done": false}}}}
+    "receive": [
+      {"path": "/", "version": 12, "node": {"app": "Tasks", "version": 12, "docs": "doc/README.md", "api": ["observe", "listen"], "tasks": {"path": "/tasks", "api": ["add", "clear_done", "undo", "page", "find"], "*": {"path": "/tasks/<task id>", "api": ["rename", "set_done", "delete"]}, "1": {"title": "Buy milk", "done": true}, "2": {"title": "Email the landlord about the radiator", "done": true}, "3": {"title": "Book dentist appointment", "done": false}}}}
+    ]
   },
   {
-    "note": "After reading doc/tasks/_/set_done.md.",
+    "note": "After reading doc/tasks/_/set_done.md. Every action in this app is instant, so receipt and ping always arrive as one message.",
     "call": {"action": "set_done", "path": "/tasks/3", "done": true},
-    "reply": {"ok": true, "path": "/tasks/3", "action": "set_done", "version": 13, "changes": [{"op": "set", "path": "/tasks/3/done", "value": true}]}
+    "receive": [
+      {"receipt": "s51", "path": "/tasks/3", "action": "set_done", "ping": {"version": 13, "changed": ["/tasks/3/done"], "removed": []}}
+    ]
   },
   {
     "call": {"action": "add", "path": "/tasks", "title": "Water plants"},
-    "reply": {"ok": true, "path": "/tasks", "action": "add", "version": 14, "changes": [{"op": "add", "path": "/tasks/4", "value": {"title": "Water plants", "done": false}}]}
+    "receive": [
+      {"receipt": "s52", "path": "/tasks", "action": "add", "ping": {"version": 14, "changed": ["/tasks/4"], "removed": []}}
+    ]
   },
   {
+    "note": "A duplicate title: the error comes as feedback, and nothing changes.",
     "call": {"action": "add", "path": "/tasks", "title": "buy MILK"},
-    "reply": {"ok": false, "path": "/tasks", "action": "add", "error": "duplicate_title", "message": "\"Buy milk\" already exists at /tasks/1."}
+    "receive": [
+      {"receipt": "s53", "path": "/tasks", "action": "add", "feedback": {"error": "duplicate_title", "message": "\"Buy milk\" already exists at /tasks/1."}, "ping": {"version": 14, "changed": [], "removed": []}}
+    ]
   },
   {
     "call": {"action": "clear_done", "path": "/tasks"},
-    "reply": {"ok": true, "path": "/tasks", "action": "clear_done", "version": 15, "changes": [{"op": "remove", "path": "/tasks/1"}, {"op": "remove", "path": "/tasks/2"}, {"op": "remove", "path": "/tasks/3"}]}
+    "receive": [
+      {"receipt": "s54", "path": "/tasks", "action": "clear_done", "ping": {"version": 15, "changed": [], "removed": ["/tasks/1", "/tasks/2", "/tasks/3"]}}
+    ]
   },
   {
     "call": {"action": "undo", "path": "/tasks"},
-    "reply": {"ok": true, "path": "/tasks", "action": "undo", "version": 16, "changes": [{"op": "add", "path": "/tasks/1", "value": {"title": "Buy milk", "done": true}}, {"op": "add", "path": "/tasks/2", "value": {"title": "Email the landlord about the radiator", "done": true}}, {"op": "add", "path": "/tasks/3", "value": {"title": "Book dentist appointment", "done": true}}]}
+    "receive": [
+      {"receipt": "s55", "path": "/tasks", "action": "undo", "ping": {"version": 16, "changed": ["/tasks/1", "/tasks/2", "/tasks/3"], "removed": []}}
+    ]
   },
   {
     "call": {"action": "delete", "path": "/tasks/99"},
-    "reply": {"ok": false, "path": "/tasks/99", "action": "delete", "error": "not_found", "message": "No task at /tasks/99."}
+    "receive": [
+      {"receipt": "s56", "path": "/tasks/99", "action": "delete", "feedback": {"error": "not_found", "message": "No task at /tasks/99."}, "ping": {"version": 16, "changed": [], "removed": []}}
+    ]
   }
 ]

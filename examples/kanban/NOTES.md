@@ -6,10 +6,10 @@ checklist and comments, plus archive, restore and permanent delete.
 
 - `state.json`: the full tree, about 2.5 KB. At a 2 KB budget, `observe /`
   folds `/cards`.
-- `doc/`: one Markdown file per action plus a README, 24 files, about 0.4 KB each.
+- `doc/`: one Markdown file per action plus a README, 25 files, about 0.4 KB each.
 - `exchange.json`: an agent closing out a bug card, then hitting a card limit and a
-  stale version, catching up with `observe since`, clearing out Done with
-  `archive_all`, searching with `find`, and an overflowing list.
+  change made by someone else, clearing out Done with a slow `archive_all`,
+  searching with `find`, and an overflowing list.
 
 ## What this example tested
 
@@ -20,8 +20,12 @@ checklist and comments, plus archive, restore and permanent delete.
 - **`derived`.** `overdue` is precomputed, and replies recompute it.
 - **References.** Assignees and labels are ids under `/members` and `/labels`.
 - **Read-only branches.** Members and labels have no `api`; comments can only be paged.
-- **Both kinds of feedback.** Most actions list their changes in the reply.
-  `archive_all` only confirms, and the agent observes with `since` to see the effect.
+- **Receipt, busy, ping.** Most actions settle at once, so receipt and ping arrive as one
+  message. The sample session treats `archive_all` as slow: the receipt lists the busy
+  nodes, an observation in between shows them marked busy, a move on a busy card is
+  refused, and the ping arrives later. (In `app.html` it is instant too.)
+- **Pings from others.** The agent listens on `/` and hears Priya's change as a ping,
+  instead of discovering it through a `stale` error.
 
 ## Left out on purpose
 

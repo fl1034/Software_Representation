@@ -1,10 +1,11 @@
 # observe
 
-Read any node of the tree. Changes nothing.
+Read any node of the tree. A query: changes nothing, answers at once.
 
 Call: `{"action": "observe", "path": "<path>"}`, for example `/` or `/cards/k4`.
 
-Reply: `{"ok": true, "path": "<path>", "action": "observe", "version": <n>, "node": <the node>}`.
+Reply: `{"path": "<path>", "version": <n>, "node": <the node>}`. Busy nodes show their last
+well-defined value, marked `busy` (see `README.md`).
 
 Replies stay under 2 KB. A child too large to fit is replaced by
 `{"folded": "<summary>. Observe <its path>"}`; observe that path to see it.

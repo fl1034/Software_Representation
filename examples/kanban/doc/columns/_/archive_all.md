@@ -5,8 +5,9 @@ Archived cards can be restored one by one (see `doc/cards/_/restore.md`).
 
 Call: `{"action": "archive_all", "path": "/columns/<column id>"}`
 
-Reply: confirmation only, with no list of changes. To see what changed, observe with
-`since` set to the version you had before the call.
+Can take a while on a big column. Until the ping, the column and every card in it are busy.
+
+Changes: the column's `cards`, and each card's `archived`.
 
 Errors:
 - `column_empty`

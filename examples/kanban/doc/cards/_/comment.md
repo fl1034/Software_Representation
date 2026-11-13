@@ -5,7 +5,7 @@ Post a comment on a card as `/me`, dated `/today`. Comments can't be edited or d
 Call: `{"action": "comment", "path": "/cards/<card id>", "text": "<text>"}`
 - `text`: non-empty.
 
-Reply lists its changes: adds `/cards/<card id>/comments/<new comment id>`.
+Changes: adds `/cards/<card id>/comments/<new comment id>`.
 
 Errors:
 - `empty_text`

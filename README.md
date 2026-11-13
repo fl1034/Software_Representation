@@ -40,12 +40,12 @@ The doc for action `a` on node path `/x/<id>/y` is `doc/x/_/y/a.md`: the same
 path, with ids replaced by `_`. Actions on the root are at `doc/<action>.md`.
 
 Each doc covers one action in a few lines of plain language: what it does,
-the exact JSON call, its arguments, what it changes and its errors. The agent
+the exact JSON call, its arguments, what it changes and its error codes. The agent
 opens a doc only when it is about to use that action, so it never pays for
 documentation it doesn't need.
 
-`doc/README.md` covers what every call shares: call and reply shapes, common
-errors, folding and versions. The root node points to it with `"docs"`.
+`doc/README.md` covers what every call shares: queries and submissions, receipts
+and pings, common errors, folding and versions. The root node points to it with `"docs"`.
 
 ### 4. Repeated children are described once
 
@@ -58,55 +58,82 @@ actions, and anything else shared. It can nest (`/cards/*/checklist/*`).
   they omit it instead of writing `"checklist": {}`.
 - `derived`: fields the app computes, with a one-line rule.
 
-### 6. Calls and replies
+### 6. Queries and submissions
 
-Every call is one JSON object:
+A call is one JSON object. There are two kinds.
 
-```json
-{ "action": "move", "path": "/cards/k4", "column": "c3" }
-```
+**Queries** read the tree and change nothing: `observe`, `page`, `find`, and `listen`
+to subscribe to pings. An observation is just that: it can be made at any time, even
+while parts of the tree are busy. It answers at once with what's in the tree right
+now, busy markers included, and never waits for anything to settle (see 7 and 8).
 
-There are two kinds of feedback.
+**Submissions** are every other action, anything that may change the tree.
+Every submission goes through the same steps, whatever happens to it:
 
-**The reply: the element confirms what happened to it.** It comes back as soon as
-the action is done:
+1. **Receipt.** The app answers at once and gives the submission an id. This is the
+   first chance for feedback.
+2. **Busy.** From the moment the app receives the submission, the called node, and
+   anything else the app's logic says the submission affects, is busy: for now it has
+   no well-defined value.
+3. **Ping.** When the next well-defined state arrives, the app sends a ping naming the
+   submission, the new version, and every path that changed or was removed. This is
+   the second chance for feedback.
 
-```json
-{ "ok": true, "path": "/cards/k4", "action": "move", "version": 39 }
-{ "ok": false, "path": "/cards/k6", "action": "move", "error": "column_full", "message": "Review is at its limit of 2 cards (k7, k4)." }
-```
+A submission the app can't carry out (a full column, an unknown member, a bad argument)
+is no exception. The receipt carries the error, the busy period lasts no time at all,
+and the ping reports that nothing changed: `changed` is empty and the version stays
+the same. Errors are feedback, never part of the tree.
 
-A reply may also list `changes` (each an `add`, `set` or `remove` at a path), but
-only if the list is complete. An app that can't be sure of every side effect leaves
-`changes` out, and the agent observes instead (see 7). So the agent never has to
-wonder whether a list is partial. Each action's doc says which kind of reply it gives.
-
-Errors have a fixed code and a message written for the agent, which says what to do
-next where possible.
-
-**Observation: the agent works out what changed.** For actions with wide or
-unpredictable effects, the agent observes the tree, usually with `since` (see 7),
-and decides for itself what the changes mean.
-
-**Actions that take time** don't wait for the result. The reply says the work has
-started and gives the path of a node that tracks it:
+The app sends the receipt and the ping whether anyone is listening or not. If the
+next state is ready before the receipt goes out, it sends both as one message.
 
 ```json
-{ "ok": true, "path": "/imports", "action": "start", "version": 40, "status": "/imports/j7" }
+{ "action": "archive_all", "path": "/columns/c4" }
+→ { "receipt": "s57", "path": "/columns/c4", "action": "archive_all", "busy": ["/columns/c4", "/cards/k8"] }
+   ... later, to anyone listening on those paths:
+  { "ping": "s57", "version": 43, "changed": ["/columns/c4/cards", "/cards/k8/archived"], "removed": [] }
+
+{ "action": "move", "path": "/cards/k6", "column": "c3" }
+→ { "receipt": "s54", "path": "/cards/k6", "action": "move",
+    "feedback": { "error": "column_full", "message": "Review is at its limit of 2 cards (k7, k4)." },
+    "ping": { "version": 40, "changed": [], "removed": [] } }
 ```
 
-The agent observes that node, or the tree with `since`, whenever it chooses.
-(Neither example has such an action yet.)
+A ping names what changed, not the new values. To see them, observe with `since`
+(see 7), or observe the changed paths.
+
+**Feedback** is `{ "error": "<code>", "message": "..." }` for something that went
+wrong, or just `{ "message": "..." }`. Messages are written for the agent and say
+what to do next where possible.
+
+**Busy nodes.** Observing a busy node returns its last well-defined value, labelled:
+
+```json
+"c4": { "busy": { "by": "s57", "last": { "name": "Done", "limit": null, "cards": ["k8"] } } }
+```
+
+While anything is busy, the root lists it (`"busy": ["/columns/c4", "/cards/k8"]`), and
+a folded stub says how many busy nodes it hides. A submission on a busy node gets a
+receipt with feedback `busy` naming the submission it is waiting on, then a ping with
+nothing changed. The app doesn't queue it; the agent can listen and resubmit.
+
+**Waiting and listening.** `{ "action": "listen", "path": "/cards" }` subscribes to
+every ping that touches a path under `/cards`, including those caused by other people,
+other agents or timers. To wait for its own submission, an agent adds `"wait": true`;
+the app then holds the receipt until the ping and sends them as one message.
+How pings travel (a socket, a stream, a long poll) is up to the app. An app that
+can't push still marks busy nodes, so the agent can poll with `observe`.
 
 ### 7. `observe` and folding
 
-Every app has one built-in action on the root:
+Every app has two built-in queries on the root: `observe` and `listen` (see 6).
 
 ```json
 { "action": "observe", "path": "/cards/k4" }
+→ { "path": "/cards/k4", "version": 41, "node": { ... } }
 ```
 
-It returns the node at that path. Each reply has a size budget. While a node is over
+It returns the node at that path, as of the latest well-defined state. Each reply has a size budget. While a node is over
 budget, the app replaces its largest child with a stub that says how to see it:
 
 ```json
@@ -119,7 +146,7 @@ The rule is mechanical: the app doesn't guess what the agent needs.
 
 ```json
 { "action": "observe", "path": "/", "since": 42 }
-→ { "ok": true, "path": "/", "action": "observe", "version": 43, "since": 42,
+→ { "path": "/", "version": 43, "since": 42,
     "node": { "columns": { "c4": { "cards": [] } }, "cards": { "k8": { "archived": "c4" } } },
     "removed": [] }
 ```
@@ -134,7 +161,8 @@ stamps down to whatever was written. Once deletion markers older than a version 
 been thrown away, `since` for that version fails with `too_old`, and the agent
 observes without it.
 
-`tools/fold.py` is a reference implementation of folding, `since`, overflow, `page` and `find`.
+`tools/fold.py` is a reference implementation of the queries: folding, `since`,
+overflow, `page` and `find`, including busy nodes.
 
 ### 8. Long lists: `overflow`, `page` and `find`
 
@@ -161,15 +189,16 @@ The child limit applies first, then folding keeps the reply under the size budge
 
 ### 9. Versions
 
-The tree has a `version` number that goes up with every change. Any call may
-include `"version": <n>`. If the data has changed since then, the call fails with
-`stale`. This covers anything else changing the data: a person, another agent,
-a sync job.
+The tree's `version` counts well-defined states: it goes up at each ping that
+changed something, and never while nodes are busy. A submission may include
+`"version": <n>`. If the tree has moved past version n, the receipt carries `stale`
+and nothing changes. This guards against acting on an outdated view of the tree,
+whoever changed it.
 
 ### Reserved keys
 
-`path`, `api`, `*`, `defaults`, `derived`, `folded`, `overflow`, and on the root `app`,
-`version` and `docs`. They can't be used as ids.
+`path`, `api`, `*`, `defaults`, `derived`, `folded`, `overflow`, `busy`, and on the root
+`app`, `version` and `docs`. They can't be used as ids.
 
 ## Examples
 

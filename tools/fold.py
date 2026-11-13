@@ -18,8 +18,8 @@ Prints the reply an app would send. Everything here is deliberately mechanical:
 """
 import argparse, copy, json
 
-RESERVED = {"app", "version", "docs", "path", "api", "*", "defaults", "derived", "folded", "overflow"}
-NEVER_FOLD = {"app", "version", "docs", "path", "api", "overflow"}
+RESERVED = {"app", "version", "docs", "path", "api", "*", "defaults", "derived", "folded", "overflow", "busy"}
+NEVER_FOLD = {"app", "version", "docs", "path", "api", "overflow", "busy"}
 
 
 def size(node):
@@ -64,10 +64,20 @@ def window(tree, node, path, keys, max_children, next_call, noun="children"):
     return out
 
 
+def count_busy(node):
+    if isinstance(node, dict):
+        if "busy" in node and isinstance(node["busy"], dict):
+            return 1
+        return sum(count_busy(v) for k, v in node.items() if k not in ("*", "busy"))
+    return 0
+
+
 def stub(node, path):
     n = len(data_keys(node)) if isinstance(node, dict) else len(node)
     kind = "children" if isinstance(node, dict) else "items"
-    return {"folded": f"{n} {kind}, {size(node) / 1024:.1f} KB. Observe {path}"}
+    b = count_busy(node)
+    busy = f", {b} busy" if b else ""
+    return {"folded": f"{n} {kind}{busy}, {size(node) / 1024:.1f} KB. Observe {path}"}
 
 
 def fold(node, path, budget):
@@ -86,7 +96,8 @@ def fold(node, path, budget):
 
 
 def reply(tree, path, node, action="observe"):
-    return {"ok": True, "path": path, "action": action, "version": tree.get("version"), "node": node}
+    """Queries answer with state directly; there is no receipt or ping."""
+    return {"path": path, "version": tree.get("version"), "node": node}
 
 
 def observe(tree, path, budget=2048, max_children=100):
@@ -163,7 +174,7 @@ def exists(tree, path):
 
 def observe_since(tree, log, path, since, oldest_kept=0, budget=2048):
     if since < oldest_kept:
-        return {"ok": False, "path": path, "action": "observe", "error": "too_old",
+        return {"path": path, "error": "too_old",
                 "message": f"Changes before version {oldest_kept} are no longer kept. Observe without since."}
     prefix = path.rstrip("/") + "/"
     recent = [e for e in log if e["version"] > since and (e["path"] + "/").startswith(prefix)]
@@ -183,6 +194,35 @@ def observe_since(tree, log, path, since, oldest_kept=0, budget=2048):
     r["since"] = since
     r["removed"] = removed
     return r
+
+
+# ---------- submissions: busy and settle ----------
+# A submission marks nodes busy at once and settles them later. While busy, a node
+# shows its last well-defined value, and the root lists every busy path.
+
+def mark_busy(tree, submission, paths):
+    for p in paths:
+        *parent, key = parts(p)
+        node = get(tree, "/" + "/".join(parent))
+        node[key] = {"busy": {"by": submission, "last": node[key]}}
+    tree.setdefault("busy", []).extend(paths)
+
+
+def settle(tree, log, submission, changes):
+    """Restore busy nodes, apply the changes as the next well-defined state, return the ping."""
+    for p in list(tree.get("busy", [])):
+        *parent, key = parts(p)
+        node = get(tree, "/" + "/".join(parent))
+        if isinstance(node.get(key), dict) and node[key].get("busy", {}).get("by") == submission:
+            node[key] = node[key]["busy"]["last"]
+            tree["busy"].remove(p)
+    if not tree.get("busy"):
+        tree.pop("busy", None)
+    if changes:
+        apply(tree, log, changes)
+    return {"ping": submission, "version": tree["version"],
+            "changed": [c["path"] for c in changes if c["op"] != "remove"],
+            "removed": [c["path"] for c in changes if c["op"] == "remove"]}
 
 
 if __name__ == "__main__":

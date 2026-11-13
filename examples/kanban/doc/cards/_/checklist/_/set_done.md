@@ -5,7 +5,7 @@ Tick or untick a checklist item.
 Call: `{"action": "set_done", "path": "/cards/<card id>/checklist/<item id>", "done": true}`
 - `done`: `true` or `false`.
 
-Reply lists its changes: sets `done`.
+Changes: sets `done`.
 
 Errors:
 - `card_archived`: restore the card first.

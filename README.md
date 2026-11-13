@@ -62,8 +62,8 @@ actions, and anything else shared. It can nest (`/cards/*/checklist/*`).
 
 A call is one JSON object. There are two kinds.
 
-**Queries** read the tree and change nothing: `observe`, `page`, `find`, and `listen`
-to subscribe to pings. An observation is just that: it can be made at any time, even
+**Queries** read the tree and change nothing: `observe`, `page`, `find`, `view` to
+choose how nodes are shown, and `listen` to subscribe to pings. An observation is just that: it can be made at any time, even
 while parts of the tree are busy. It answers at once with what's in the tree right
 now, busy markers included, and never waits for anything to settle (see 7 and 8).
 
@@ -126,21 +126,44 @@ can't push still marks busy nodes, so the agent can poll with `observe`.
 
 ### 7. `observe` and folding
 
-Every app has two built-in queries on the root: `observe` and `listen` (see 6).
+Every app has three built-in queries on the root: `observe`, `view` (below) and
+`listen` (see 6).
 
 ```json
 { "action": "observe", "path": "/cards/k4" }
 → { "path": "/cards/k4", "version": 41, "node": { ... } }
 ```
 
-It returns the node at that path, as of the latest well-defined state. Each reply has a size budget. While a node is over
-budget, the app replaces its largest child with a stub that says how to see it:
+It returns the node at that path, as of the latest well-defined state. Each reply has a size budget. While a reply is over
+budget, the app replaces the largest node in it with a stub that says how to see it.
+A stub the app makes on its own always keeps the node's `path` and `api`, so the agent
+can still see what it could do there:
 
 ```json
-"cards": { "folded": "9 children, 1.8 KB. Observe /cards" }
+"cards": { "path": "/cards", "api": ["page", "find"], "folded": "9 children, 1.8 KB. Observe /cards" }
 ```
 
 The rule is mechanical: the app doesn't guess what the agent needs.
+
+**Views: the agent chooses.** On top of the app's own folding, the agent can set any
+node to one of three views:
+
+```json
+{ "action": "view", "path": "/cards", "view": "expand" }
+```
+
+- `fold`: shown as the barest summary, `{ "folded": "4 children" }`, wherever it appears
+  in an observation.
+- `expand`: shown in full. The app never folds it or anything inside it to save space;
+  only the overflow limit (see 8) still applies. Nodes above it aren't folded either,
+  so it stays in sight.
+- `auto`: the default. The app decides, following the rule above.
+
+A view is a query like `observe`: it changes nothing in the tree, can be set at any
+moment, and goes through no receipt or ping. Views belong to the agent that sets them;
+other agents never see them. The answer shows the node the way it will now appear.
+Observing a node by its own path always shows it, whatever its view; `fold` only
+governs how it appears inside other observations.
 
 **`since`** returns only what changed after a given version:
 
@@ -161,8 +184,8 @@ stamps down to whatever was written. Once deletion markers older than a version 
 been thrown away, `since` for that version fails with `too_old`, and the agent
 observes without it.
 
-`tools/fold.py` is a reference implementation of the queries: folding, `since`,
-overflow, `page` and `find`, including busy nodes.
+`tools/fold.py` is a reference implementation of the queries: folding, views,
+`since`, overflow, `page` and `find`, including busy nodes.
 
 ### 8. Long lists: `overflow`, `page` and `find`
 
@@ -223,6 +246,12 @@ python3 tools/fold.py examples/kanban/state.json /cards --max-children 3
 
 ```bash
 python3 tools/fold.py examples/kanban/state.json /cards --find '{"where": {"assignee": "u2"}}'
+```
+
+With views: `/cards` expanded and `/labels` folded:
+
+```bash
+python3 tools/fold.py examples/kanban/state.json / --view /cards=expand --view /labels=fold
 ```
 
 ## Open questions

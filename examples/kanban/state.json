@@ -2,7 +2,7 @@
   "app": "Sprint Board",
   "version": 37,
   "docs": "doc/README.md",
-  "api": ["observe", "listen"],
+  "api": ["observe", "view", "listen"],
   "today": "2026-11-12",
   "me": "u1",
 

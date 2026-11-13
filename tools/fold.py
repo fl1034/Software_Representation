@@ -1,7 +1,7 @@
 """Reference implementation of `observe` (with folding and `since`), `page` and `find`.
 
 Usage:
-  python3 tools/fold.py <state.json> <path> [--budget 2048] [--max-children 100]
+  python3 tools/fold.py <state.json> <path> [--budget 2048] [--max-children 100] [--view /cards=expand]
   python3 tools/fold.py <state.json> <path> --after <id>
   python3 tools/fold.py <state.json> <path> --find '{"where": {...}, "text": "..."}'
 
@@ -13,8 +13,11 @@ Prints the reply an app would send. Everything here is deliberately mechanical:
 1. Overflow: a node never returns more than `max-children` data children. If it
    has more, it returns the first ones in its own order and adds an `overflow`
    note with the exact call that gets the next page.
-2. Folding: while the reply is over `budget` bytes (compact JSON), the largest
-   child is replaced with a `folded` stub that says how to observe it.
+2. Views: the agent may set any node to `fold` (barest summary) or `expand`
+   (never folded automatically; only the overflow limit applies).
+3. Folding: while the reply is over `budget` bytes (compact JSON), the largest
+   node not protected by an `expand` is replaced with a stub that keeps its
+   `path` and `api` and says how to observe it.
 """
 import argparse, copy, json
 
@@ -31,6 +34,10 @@ def get(tree, path):
     for key in [p for p in path.split("/") if p]:
         node = node[key]
     return node
+
+
+def parts(path):
+    return [p for p in path.split("/") if p]
 
 
 def data_keys(node):
@@ -72,26 +79,114 @@ def count_busy(node):
     return 0
 
 
-def stub(node, path):
+def count_children(node):
     n = len(data_keys(node)) if isinstance(node, dict) else len(node)
-    kind = "children" if isinstance(node, dict) else "items"
+    return n, ("children" if isinstance(node, dict) else "items")
+
+
+def auto_stub(node, path):
+    """What the app folds on its own: a summary, but the node's path and api stay visible."""
+    n, kind = count_children(node)
     b = count_busy(node)
     busy = f", {b} busy" if b else ""
-    return {"folded": f"{n} {kind}{busy}, {size(node) / 1024:.1f} KB. Observe {path}"}
+    out = {k: node[k] for k in ("path", "api") if isinstance(node, dict) and k in node}
+    out["folded"] = f"{n} {kind}{busy}, {size(node) / 1024:.1f} KB. Observe {path}"
+    return out
 
 
-def fold(node, path, budget):
+def min_stub(node):
+    """What the agent asked to fold: the barest summary."""
+    n, kind = count_children(node)
+    return {"folded": f"{n} {kind}"}
+
+
+def child_path(path, key):
+    return path.rstrip("/") + "/" + key
+
+
+def template_at(tree, path):
+    """The node that describes `path`: the real node, or a `*` template above it."""
+    t = tree
+    for key in parts(path):
+        if not isinstance(t, dict):
+            return {}
+        t = t["*"] if "*" in t else t.get(key, {})
+    return t if isinstance(t, dict) else {}
+
+
+def is_collection(tmpl):
+    """Children are ids (a `*` describes them, or the node can be paged), not fixed fields."""
+    return "*" in tmpl or "page" in tmpl.get("api", [])
+
+
+def window_all(tree, node, path, max_children, tmpl=None):
+    """Apply the overflow limit to every collection in the subtree, not just the top."""
+    if tmpl is None:
+        tmpl = template_at(tree, path)
+    if not isinstance(node, dict) or "busy" in node and isinstance(node["busy"], dict):
+        return node
+    keys = data_keys(node)
+    if is_collection(tmpl) and len(keys) > max_children:
+        node = window(tree, node, path, keys, max_children, {"action": "page", "path": path})
+    for k in data_keys(node):
+        child_tmpl = tmpl["*"] if "*" in tmpl else tmpl.get(k, {})
+        node[k] = window_all(tree, node[k], child_path(path, k), max_children,
+                             child_tmpl if isinstance(child_tmpl, dict) else {})
+    return node
+
+
+def foldable(node, path):
+    """(path, parent, key, child) for every descendant that could be folded."""
+    if not isinstance(node, dict):
+        return
+    for k, v in node.items():
+        if k in NEVER_FOLD or not isinstance(v, (dict, list)):
+            continue
+        if isinstance(v, dict) and "folded" in v:
+            continue
+        p = child_path(path, k)
+        yield p, node, k, v
+        yield from foldable(v, p)
+
+
+def fold(node, path, budget, views=None):
+    """Apply the agent's views, then fold automatically, largest first, until under budget.
+
+    views: {path: "fold" | "expand"}; anything else is "auto".
+    - fold: shown as the barest summary wherever it appears below the observed node.
+    - expand: never folded automatically, nor is anything inside it. Only the
+      overflow limit applies. Its ancestors aren't folded either, so it stays reachable.
+    """
+    views = views or {}
+
+    def apply_folds(n, p):
+        if not isinstance(n, dict):
+            return
+        for k, v in list(n.items()):
+            if k in NEVER_FOLD or not isinstance(v, (dict, list)):
+                continue
+            cp = child_path(p, k)
+            if views.get(cp) == "fold":
+                n[k] = min_stub(v)
+            else:
+                apply_folds(v, cp)
+    apply_folds(node, path)
+
+    expanded = [p for p, m in views.items() if m == "expand"]
+    def protected(p):
+        return any(p == e or p.startswith(e + "/") or e.startswith(p + "/") for e in expanded)
+    if any(path == e or path.startswith(e + "/") for e in expanded):
+        return node  # the observed node is itself expanded
+
     while isinstance(node, dict) and size(node) > budget:
-        candidates = [(size(v), k) for k, v in node.items()
-                      if k not in NEVER_FOLD and isinstance(v, (dict, list))
-                      and not (isinstance(v, dict) and "folded" in v)]
+        candidates = [(size(v), p, parent, k) for p, parent, k, v in foldable(node, path) if not protected(p)]
         if not candidates:
             break
-        s, key = max(candidates)
-        folded = stub(node[key], path.rstrip("/") + "/" + key)
-        if size(folded) >= s:
+        s_, p, parent, k = max(candidates, key=lambda c: c[0])
+        folded = auto_stub(parent[k], p)
+        if size(folded) >= s_:
             break
-        node[key] = folded
+        parent[k] = folded
     return node
 
 
@@ -100,18 +195,29 @@ def reply(tree, path, node, action="observe"):
     return {"path": path, "version": tree.get("version"), "node": node}
 
 
-def observe(tree, path, budget=2048, max_children=100):
-    node = get(tree, path)
-    if isinstance(node, dict):
-        node = window(tree, node, path, data_keys(node), max_children, {"action": "page", "path": path})
-    return reply(tree, path, fold(copy.deepcopy(node), path, budget))
+def observe(tree, path, budget=2048, max_children=100, views=None):
+    node = window_all(tree, copy.deepcopy(get(tree, path)), path, max_children)
+    return reply(tree, path, fold(node, path, budget, views))
 
 
-def page(tree, path, after, budget=2048, max_children=100):
+def view(tree, path, mode, views, budget=2048, max_children=100):
+    """Set how a node is shown to this agent from now on, and show it that way."""
+    if mode == "auto":
+        views.pop(path, None)
+    else:
+        views[path] = mode
+    if mode == "fold":
+        node = min_stub(get(tree, path))
+    else:
+        node = observe(tree, path, budget, max_children, views)["node"]
+    return {"path": path, "version": tree.get("version"), "view": mode, "node": node}
+
+
+def page(tree, path, after, budget=2048, max_children=100, views=None):
     node = get(tree, path)
     keys = data_keys(node)
     rest = keys[keys.index(after) + 1:] if after in keys else keys
-    return reply(tree, path, fold(window(tree, node, path, rest, max_children, {"action": "page", "path": path}), path, budget), "page")
+    return reply(tree, path, fold(window(tree, node, path, rest, max_children, {"action": "page", "path": path}), path, budget, views), "page")
 
 
 def matches(child, defaults, where, text):
@@ -130,7 +236,7 @@ def matches(child, defaults, where, text):
     return True
 
 
-def find(tree, path, where=None, text=None, after=None, budget=2048, max_children=100):
+def find(tree, path, where=None, text=None, after=None, budget=2048, max_children=100, views=None):
     node = get(tree, path)
     defaults = node.get("*", {}).get("defaults", {})
     keys = [k for k in data_keys(node) if matches(node[k], defaults, where, text)]
@@ -139,17 +245,13 @@ def find(tree, path, where=None, text=None, after=None, budget=2048, max_childre
     call = {"action": "find", "path": path}
     if where: call["where"] = where
     if text: call["text"] = text
-    return reply(tree, path, fold(window(tree, node, path, keys, max_children, call, "matches"), path, budget), "find")
+    return reply(tree, path, fold(window(tree, node, path, keys, max_children, call, "matches"), path, budget, views), "find")
 
 
 # ---------- since ----------
 # A real app stamps each node it writes, and its ancestors, with the new version,
 # and keeps deletion markers for a while. Here a flat log of writes stands in for
 # both: one entry per change, {"version", "op", "path"}.
-
-def parts(path):
-    return [p for p in path.split("/") if p]
-
 
 def apply(tree, log, changes):
     """Apply add/set/remove changes as one new version, and record them in the log."""
@@ -232,13 +334,15 @@ if __name__ == "__main__":
     ap.add_argument("--max-children", type=int, default=100)
     ap.add_argument("--after")
     ap.add_argument("--find", help='JSON: {"where": {...}, "text": "..."}')
+    ap.add_argument("--view", action="append", default=[], help="path=fold|expand, repeatable")
     a = ap.parse_args()
     tree = json.load(open(a.state))
+    views = dict(v.split("=", 1) for v in a.view)
     if a.find:
         q = json.loads(a.find)
-        r = find(tree, a.path, q.get("where"), q.get("text"), a.after, a.budget, a.max_children)
+        r = find(tree, a.path, q.get("where"), q.get("text"), a.after, a.budget, a.max_children, views)
     elif a.after:
-        r = page(tree, a.path, a.after, a.budget, a.max_children)
+        r = page(tree, a.path, a.after, a.budget, a.max_children, views)
     else:
-        r = observe(tree, a.path, a.budget, a.max_children)
+        r = observe(tree, a.path, a.budget, a.max_children, views)
     print(json.dumps(r, indent=2, ensure_ascii=False))

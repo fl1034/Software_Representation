@@ -6,7 +6,7 @@ checklist and comments, plus archive, restore and permanent delete.
 
 - `state.json`: the full tree, about 2.5 KB. At a 2 KB budget, `observe /`
   folds `/cards`.
-- `doc/`: one Markdown file per action plus a README, 25 files, about 0.4 KB each.
+- `doc/`: one Markdown file per action plus a README, 26 files, about 0.4 KB each.
 - `exchange.json`: an agent closing out a bug card, then hitting a card limit and a
   change made by someone else, clearing out Done with a slow `archive_all`,
   searching with `find`, and an overflowing list.
@@ -24,6 +24,9 @@ checklist and comments, plus archive, restore and permanent delete.
   message. The sample session treats `archive_all` as slow: the receipt lists the busy
   nodes, an observation in between shows them marked busy, a move on a busy card is
   refused, and the ping arrives later. (In `app.html` it is instant too.)
+- **Views.** The agent expands `/cards` and folds `/labels`. The app then folds
+  `/members` and `/columns` on its own to stay near budget, keeping their `path` and
+  `api` visible, while the agent's own fold of `/labels` is bare.
 - **Pings from others.** The agent listens on `/` and hears Priya's change as a ping,
   instead of discovering it through a `stale` error.
 

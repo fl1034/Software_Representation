@@ -2,7 +2,7 @@
   "app": "Tasks",
   "version": 12,
   "docs": "doc/README.md",
-  "api": ["observe", "listen"],
+  "api": ["observe", "view", "listen"],
   "tasks": {
     "path": "/tasks",
     "api": ["add", "clear_done", "undo", "page", "find"],

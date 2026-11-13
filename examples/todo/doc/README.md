@@ -9,7 +9,7 @@ A `"*"` key describes every child of its node; it is not a child itself.
 
 **Calls** are JSON: `{"action": "<action>", "path": "<node path>", ...arguments}`.
 
-**Queries** (`observe`, `page`, `find`, `listen`) change nothing and answer at once
+**Queries** (`observe`, `view`, `page`, `find`, `listen`) change nothing and answer at once
 with what's in the tree, at any time, even while parts of it are busy.
 
 **Submissions** are every other action. Each one gets:

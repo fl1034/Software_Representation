@@ -7,8 +7,9 @@ Call: `{"action": "observe", "path": "<path>"}`, for example `/` or `/cards/k4`.
 Reply: `{"path": "<path>", "version": <n>, "node": <the node>}`. Busy nodes show their last
 well-defined value, marked `busy` (see `README.md`).
 
-Replies stay under 2 KB. A child too large to fit is replaced by
-`{"folded": "<summary>. Observe <its path>"}`; observe that path to see it.
+Replies stay under 2 KB. To fit, the app replaces large nodes with
+`{"path": ..., "api": [...], "folded": "<summary>. Observe <its path>"}`; observe that path
+to see it. To control this yourself, see `view.md`.
 
 A node never lists more than 100 children. If it has more, the reply ends with
 `"overflow": {"message": "...", "next": <call>}`: send `next` to get the following ones.

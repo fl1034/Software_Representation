@@ -3,11 +3,11 @@
     "note": "The whole list fits in one reply; nothing is folded.",
     "call": {"action": "observe", "path": "/"},
     "receive": [
-      {"path": "/", "version": 12, "node": {"app": "Tasks", "version": 12, "docs": "doc/README.md", "api": ["observe", "listen"], "tasks": {"path": "/tasks", "api": ["add", "clear_done", "undo", "page", "find"], "*": {"path": "/tasks/<task id>", "api": ["rename", "set_done", "delete"]}, "1": {"title": "Buy milk", "done": true}, "2": {"title": "Email the landlord about the radiator", "done": true}, "3": {"title": "Book dentist appointment", "done": false}}}}
+      {"path": "/", "version": 12, "node": {"app": "Tasks", "version": 12, "docs": "doc/README.md", "api": ["observe", "view", "listen"], "tasks": {"path": "/tasks", "api": ["add", "clear_done", "undo", "page", "find"], "*": {"path": "/tasks/<task id>", "api": ["rename", "set_done", "delete"]}, "1": {"title": "Buy milk", "done": true}, "2": {"title": "Email the landlord about the radiator", "done": true}, "3": {"title": "Book dentist appointment", "done": false}}}}
     ]
   },
   {
-    "note": "After reading doc/tasks/_/set_done.md. Every action in this app is instant, so receipt and ping always arrive as one message.",
+    "note": "After reading doc/tasks/_/set_done.md. Adding a task is instant here, so receipt and ping always arrive as one message.",
     "call": {"action": "set_done", "path": "/tasks/3", "done": true},
     "receive": [
       {"receipt": "s51", "path": "/tasks/3", "action": "set_done", "ping": {"version": 13, "changed": ["/tasks/3/done"], "removed": []}}

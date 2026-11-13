@@ -5,7 +5,7 @@ with optional card limits, cards with labels, an assignee, a due date, a
 checklist and comments, plus archive, restore and permanent delete.
 
 - `state.json`: the full tree, about 2.1 KB. At a 2 KB budget, `observe /`
-  folds `/cards`.
+  folds `/columns`, the smallest node that is enough.
 - `doc/`: one Markdown file per action, plus the app README and the cards item doc,
   26 files, about 0.4 KB each.
 - `exchange.json`: an agent closing out a bug card, then hitting a card limit and a
@@ -25,8 +25,9 @@ checklist and comments, plus archive, restore and permanent delete.
   message. The sample session treats `archive_all` as slow: the receipt lists the busy
   nodes, an observation in between shows them marked busy, a move on a busy card is
   refused, and the ping arrives later. (In `app.html` it is instant too.)
-- **Views.** The agent expands `/cards` and folds `/labels`. The app then folds
-  `/columns` on its own to stay near budget, keeping its `api` visible, while the agent's own fold of `/labels` is bare.
+- **Views.** The agent expands `/cards` and folds `/labels`. The app still folds
+  `/columns` on its own to stay under budget, keeping its `api` visible, while the
+  agent's own fold of `/labels` is bare.
 - **Pings from others.** The agent listens on `/` and hears Priya's change as a ping,
   instead of discovering it through a `stale` error.
 
@@ -44,6 +45,8 @@ drag and drop. All of it exists to help a person look at the board.
 
 ## Size
 
-The sample session's 21 messages total 5.5 KB. Before the compaction pass
-(no paths in the tree, no echoes, item docs, compact JSON) the same session was 9.5 KB
-compact, or 16 KB indented.
+The sample session's 21 messages total 6.8 KB. Before the compaction pass (no paths in
+the tree, no echoes, item docs, compact JSON) the same session was 9.5 KB compact, or
+16 KB indented. Part of today's figure is a better folding rule: the opening view now
+folds only `/columns`, the smallest node that keeps it under budget, so the agent sees
+every card at once instead of a stub for all of them.

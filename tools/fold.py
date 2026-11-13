@@ -19,8 +19,10 @@ Everything here is deliberately mechanical:
    `"overflow": {"shown", "total", "next"}`, where `next` is the call for the rest.
 2. Views: the agent may set any node to `fold` (barest summary) or `expand`
    (never folded automatically; only the overflow limit applies).
-3. Folding: while the answer is over `budget` bytes, the largest node not
-   protected by an `expand` is replaced with a stub that keeps its `api`.
+3. Folding: while the answer is over `budget` bytes, the app folds the smallest
+   node whose folding alone brings it under budget, or, if no single node is
+   enough, the largest node, and repeats. Nodes protected by an `expand` are
+   never folded. A stub keeps the node's `api`.
 """
 import argparse, copy, json
 
@@ -130,10 +132,12 @@ def count_children(node):
     return f"{n} {'children' if isinstance(node, dict) else 'items'}"
 
 
-def auto_stub(node):
-    """Folded by the app: a summary, with the node's api still visible."""
+def auto_stub(node, tmpl=None):
+    """Folded by the app: a summary, with the node's api still visible (from the node or its template)."""
     b = count_busy(node)
-    out = {"api": node["api"]} if isinstance(node, dict) and "api" in node else {}
+    api = node.get("api") if isinstance(node, dict) else None
+    api = api or (tmpl or {}).get("api")
+    out = {"api": api} if api else {}
     out["folded"] = f"{count_children(node)}{f', {b} busy' if b else ''}, {size(node) / 1024:.1f} KB"
     return out
 
@@ -155,7 +159,7 @@ def foldable(node, path):
         yield from foldable(v, p)
 
 
-def fold(node, path, budget, views=None):
+def fold(node, path, budget, views=None, tree=None):
     """Apply the agent's views, then fold automatically, largest first, until under budget.
 
     views: {path: "fold" | "expand"}; anything else is "auto".
@@ -185,13 +189,20 @@ def fold(node, path, budget, views=None):
         return any(p == e or p.startswith(e + "/") or e.startswith(p + "/") for e in expanded)
 
     while isinstance(node, dict) and size(node) > budget:
-        candidates = [(size(v), parent, k) for p, parent, k, v in foldable(node, path) if not protected(p)]
+        need = size(node) - budget
+        candidates = []
+        for p, parent, k, v in foldable(node, path):
+            if protected(p):
+                continue
+            stub = auto_stub(v, template_at(tree, p) if tree else None)
+            saving = size(v) - size(stub)
+            if saving > 0:
+                candidates.append((size(v), saving, parent, k, stub))
         if not candidates:
             break
-        s, parent, k = max(candidates, key=lambda c: c[0])
-        stub = auto_stub(parent[k])
-        if size(stub) >= s:
-            break
+        enough = [c for c in candidates if c[1] >= need]
+        # the smallest node that alone is enough; otherwise the largest, and go round again
+        _, _, parent, k, stub = min(enough, key=lambda c: c[0]) if enough else max(candidates, key=lambda c: c[0])
         parent[k] = stub
     return node
 
@@ -205,7 +216,7 @@ def answer(tree, node):
 
 def observe(tree, path, budget=2048, max_children=100, views=None):
     node = window_all(tree, visible(copy.deepcopy(get(tree, path))), path, max_children)
-    return answer(tree, fold(node, path, budget, views))
+    return answer(tree, fold(node, path, budget, views, tree))
 
 
 def view(views, path, mode):
@@ -221,7 +232,7 @@ def page(tree, path, after, budget=2048, max_children=100, views=None):
     node = visible(get(tree, path))
     keys = data_keys(node)
     rest = keys[keys.index(after) + 1:] if after in keys else keys
-    return answer(tree, fold(window(node, rest, max_children, {"action": "page", "path": path}), path, budget, views))
+    return answer(tree, fold(window(node, rest, max_children, {"action": "page", "path": path}), path, budget, views, tree))
 
 
 def template_path(tree, path):
@@ -259,7 +270,7 @@ def find(tree, path, where=None, text=None, after=None, budget=2048, max_childre
     call = {"action": "find", "path": path}
     if where: call["where"] = where
     if text: call["text"] = text
-    return answer(tree, fold(window(node, keys, max_children, call), path, budget, views))
+    return answer(tree, fold(window(node, keys, max_children, call), path, budget, views, tree))
 
 
 # ---------- since ----------
@@ -307,7 +318,7 @@ def observe_since(tree, log, path, since, oldest_kept=0, budget=2048):
         for k in rel[:-1]:
             cur = cur.setdefault(k, {})
         cur[rel[-1]] = visible(copy.deepcopy(get(tree, p)))
-    return capped(answer(tree, fold(node, path, budget)), "removed", removed)
+    return capped(answer(tree, fold(node, path, budget, None, tree)), "removed", removed)
 
 
 # ---------- submissions: busy and settle ----------

@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Household Budget Sheet</title>
+<style>
+  :root {
+    --bg: #f4f5f2; --panel: #ffffff; --grid: #dfe2dc; --head: #eceee9; --head-text: #5d6459;
+    --text: #1c201b; --muted: #6b7267; --accent: #1f7a4d; --accent-soft: #dcefe4; --err: #b3261e;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #151714; --panel: #1d201c; --grid: #30342e; --head: #242822; --head-text: #9aa395;
+      --text: #e6e9e3; --muted: #9aa395; --accent: #5cc48e; --accent-soft: #1f3a2b; --err: #f08a80;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #151714; --panel: #1d201c; --grid: #30342e; --head: #242822; --head-text: #9aa395;
+    --text: #e6e9e3; --muted: #9aa395; --accent: #5cc48e; --accent-soft: #1f3a2b; --err: #f08a80;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 13px/1.3 system-ui, -apple-system, "Segoe UI", sans-serif; display: flex; flex-direction: column; }
+  button, input { font: inherit; color: inherit; }
+  button { background: var(--panel); border: 1px solid var(--grid); border-radius: 5px; padding: 4px 9px; cursor: pointer; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding-block: 8px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .bar h1 { font-size: 15px; margin: 0 8px 0 0; }
+  #ref { width: 56px; text-align: center; font-variant-numeric: tabular-nums; color: var(--muted); }
+  #fx { flex: 1; min-width: 160px; background: var(--panel); border: 1px solid var(--grid); border-radius: 5px; padding: 5px 8px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+  .wrap { flex: 1; overflow: auto; margin-left: max(16px, env(safe-area-inset-left, 0px)); margin-right: max(16px, env(safe-area-inset-right, 0px)); border: 1px solid var(--grid); background: var(--panel); }
+  table { border-collapse: collapse; table-layout: fixed; }
+  th, td { border: 1px solid var(--grid); height: 24px; padding: 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  th { background: var(--head); color: var(--head-text); font-weight: 500; position: sticky; z-index: 1; }
+  thead th { top: 0; width: 96px; }
+  thead th:first-child { left: 0; z-index: 2; width: 44px; }
+  tbody th { left: 0; text-align: center; font-variant-numeric: tabular-nums; }
+  td { width: 96px; cursor: cell; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.err { color: var(--err); font-weight: 600; }
+  td.sel { outline: 2px solid var(--accent); outline-offset: -2px; background: var(--accent-soft); }
+  th.hl { color: var(--accent); font-weight: 700; }
+  td input { width: 100%; border: none; outline: none; background: transparent; padding: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+  .tabs { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; padding-block: 8px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .tab { border-radius: 0 0 6px 6px; border-top: none; }
+  .tab.on { background: var(--accent-soft); border-color: var(--accent); font-weight: 600; }
+  .tab input { width: 110px; border: none; background: transparent; outline: none; }
+  .tabs .note { color: var(--muted); margin-left: 8px; }
+  .tabs .warn { color: var(--err); }
+</style>
+</head>
+<body>
+<div class="bar">
+  <h1>Household Budget</h1>
+  <span id="ref" aria-label="Selected cell">A1</span>
+  <input id="fx" aria-label="Cell contents" autocomplete="off" spellcheck="false">
+  <button id="ins-row" title="Insert a row above the selected cell">Insert row</button>
+  <button id="del-row" title="Delete the selected cell's row">Delete row</button>
+</div>
+<div class="wrap" id="wrap"><table id="grid"></table></div>
+<div class="tabs" id="tabs"></div>
+
+<script>
+const KEY = "budget-sheet.v1";
+const COLS = 26;
+const $ = id => document.getElementById(id);
+const colName = i => String.fromCharCode(65 + i);
+const colIndex = s => s.toUpperCase().charCodeAt(0) - 65;
+
+function seed() {
+  const budget = {
+    A1: "Category", B1: "Jan", C1: "Feb", D1: "Mar", E1: "Total", F1: "Monthly avg",
+    A2: "Rent", B2: "1200", C2: "1200", D2: "1200",
+    A3: "Groceries", B3: "410", C3: "385", D3: "452",
+    A4: "Utilities", B4: "165", C4: "190", D4: "140",
+    A5: "Transport", B5: "96", C5: "120", D5: "88",
+    A6: "Internet", B6: "55", C6: "55", D6: "55",
+    A7: "Total spent", B7: "=SUM(B2:B6)", C7: "=SUM(C2:C6)", D7: "=SUM(D2:D6)",
+    A9: "Income", B9: "3100", C9: "3100", D9: "3250", E9: "=SUM(B9:D9)",
+    A10: "Left over", B10: "=B9-B7", C10: "=C9-C7", D10: "=D9-D7", E10: "=E9-E7",
+  };
+  for (let r = 2; r <= 7; r++) { budget["E" + r] = `=SUM(B${r}:D${r})`; budget["F" + r] = `=ROUND(AVERAGE(B${r}:D${r}),2)`; }
+  return {
+    sheets: [
+      { id: "s1", name: "Budget", rows: 100, cells: budget },
+      { id: "s2", name: "Summary", rows: 100, cells: {
+        A1: "Quarter summary",
+        A3: "Total spent", B3: "=Budget!E7",
+        A4: "Total income", B4: "=Budget!E9",
+        A5: "Saved", B5: "=B4-B3",
+        A6: "Savings rate %", B6: "=ROUND(B5/B4*100,1)",
+        A7: "Biggest expense", B7: "=MAX(Budget!E2:E6)",
+      } },
+    ],
+    active: "s1", nextId: 3,
+  };
+}
+let W = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || seed(); } catch { return seed(); } })();
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(W)); } catch {} };
+const sheet = id => W.sheets.find(s => s.id === id);
+const sheetByName = n => W.sheets.find(s => s.name.toLowerCase() === n.toLowerCase());
+let sel = { col: 0, row: 1 };
+let editing = null;   // { col, row, input }
+
+// ---------- formulas ----------
+const ERR = e => ({ err: e });
+const isErr = v => v && typeof v === "object" && "err" in v;
+const REF_RE = /^(?:(?:'([^']+)'|([A-Za-z_][A-Za-z0-9_]*))!)?([A-Za-z])(\d+)(?::([A-Za-z])(\d+))?/;
+
+function tokenize(src) {
+  const out = []; let i = 0;
+  while (i < src.length) {
+    const ch = src[i], rest = src.slice(i);
+    if (/\s/.test(ch)) { i++; continue; }
+    let m;
+    if ((m = /^\d+(\.\d+)?/.exec(rest))) { out.push({ t: "num", v: parseFloat(m[0]) }); i += m[0].length; continue; }
+    if ((m = REF_RE.exec(rest)) && !/^[A-Za-z]\d+[A-Za-z_(]/.test(rest.slice((m[1] || m[2]) ? m[0].indexOf("!") + 1 : 0))) {
+      out.push({ t: "ref", sheet: m[1] || m[2] || null, c1: colIndex(m[3]), r1: +m[4], c2: m[5] ? colIndex(m[5]) : null, r2: m[6] ? +m[6] : null });
+      i += m[0].length; continue;
+    }
+    if ((m = /^[A-Za-z_][A-Za-z0-9_]*/.exec(rest))) { out.push({ t: "name", v: m[0].toUpperCase() }); i += m[0].length; continue; }
+    if ("+-*/^(),".includes(ch)) { out.push({ t: ch }); i++; continue; }
+    throw new Error("bad character " + ch);
+  }
+  return out;
+}
+
+function parse(src) {
+  const toks = tokenize(src); let p = 0;
+  const peek = () => toks[p], take = t => { if (toks[p]?.t !== t) throw new Error("expected " + t); return toks[p++]; };
+  function expr() { let a = term(); while (peek()?.t === "+" || peek()?.t === "-") { const op = toks[p++].t; a = { k: "bin", op, a, b: term() }; } return a; }
+  function term() { let a = power(); while (peek()?.t === "*" || peek()?.t === "/") { const op = toks[p++].t; a = { k: "bin", op, a, b: power() }; } return a; }
+  function power() { const a = unary(); if (peek()?.t === "^") { p++; return { k: "bin", op: "^", a, b: power() }; } return a; }
+  function unary() { if (peek()?.t === "-") { p++; return { k: "neg", a: unary() }; } if (peek()?.t === "+") { p++; return unary(); } return primary(); }
+  function primary() {
+    const t = toks[p++];
+    if (!t) throw new Error("unexpected end");
+    if (t.t === "num") return { k: "num", v: t.v };
+    if (t.t === "ref") return t.c2 == null ? { k: "ref", sheet: t.sheet, c: t.c1, r: t.r1 } : { k: "range", sheet: t.sheet, c1: t.c1, r1: t.r1, c2: t.c2, r2: t.r2 };
+    if (t.t === "(") { const e = expr(); take(")"); return e; }
+    if (t.t === "name") {
+      take("("); const args = [];
+      if (peek()?.t !== ")") { args.push(expr()); while (peek()?.t === ",") { p++; args.push(expr()); } }
+      take(")"); return { k: "fn", name: t.v, args };
+    }
+    throw new Error("unexpected " + t.t);
+  }
+  const e = expr(); if (p < toks.length) throw new Error("unexpected " + toks[p].t);
+  return e;
+}
+
+let cache, stack;
+function value(sid, key) {
+  const id = sid + "!" + key;
+  if (cache.has(id)) return cache.get(id);
+  if (stack.has(id)) return ERR("#CYCLE!");
+  const raw = sheet(sid)?.cells[key];
+  let v;
+  if (raw == null || raw === "") v = null;
+  else if (raw[0] === "=") {
+    stack.add(id);
+    try { v = evaluate(parse(raw.slice(1)), sid); } catch { v = ERR("#ERROR!"); }
+    stack.delete(id);
+    if (v === null) v = 0;
+  } else if (/^-?\d+(\.\d+)?$/.test(raw.trim())) v = parseFloat(raw);
+  else v = raw;
+  cache.set(id, v); return v;
+}
+function resolveSheet(name, sid) { if (!name) return sid; const s = sheetByName(name); return s ? s.id : null; }
+function rangeValues(n, sid) {
+  const s = resolveSheet(n.sheet, sid); if (!s) return ERR("#REF!");
+  const out = [];
+  for (let r = Math.min(n.r1, n.r2); r <= Math.max(n.r1, n.r2); r++)
+    for (let c = Math.min(n.c1, n.c2); c <= Math.max(n.c1, n.c2); c++) out.push(value(s, colName(c) + r));
+  return out;
+}
+function num(v) {
+  if (isErr(v)) return v;
+  if (v === null) return 0;
+  if (typeof v === "number") return v;
+  return ERR("#VALUE!");
+}
+const FNS = {
+  SUM: xs => xs.reduce((a, b) => a + b, 0),
+  AVERAGE: xs => xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : ERR("#DIV/0!"),
+  MIN: xs => xs.length ? Math.min(...xs) : 0,
+  MAX: xs => xs.length ? Math.max(...xs) : 0,
+  COUNT: xs => xs.length,
+};
+function evaluate(n, sid) {
+  switch (n.k) {
+    case "num": return n.v;
+    case "ref": { const s = resolveSheet(n.sheet, sid); return s ? value(s, colName(n.c) + n.r) : ERR("#REF!"); }
+    case "range": return ERR("#VALUE!");
+    case "neg": { const a = num(evaluate(n.a, sid)); return isErr(a) ? a : -a; }
+    case "bin": {
+      const a = num(evaluate(n.a, sid)); if (isErr(a)) return a;
+      const b = num(evaluate(n.b, sid)); if (isErr(b)) return b;
+      if (n.op === "+") return a + b; if (n.op === "-") return a - b; if (n.op === "*") return a * b;
+      if (n.op === "/") return b === 0 ? ERR("#DIV/0!") : a / b;
+      return Math.pow(a, b);
+    }
+    case "fn": {
+      if (n.name === "ROUND" || n.name === "ABS") {
+        const a = num(evaluate(n.args[0], sid)); if (isErr(a)) return a;
+        if (n.name === "ABS") return Math.abs(a);
+        const d = n.args[1] ? num(evaluate(n.args[1], sid)) : 0; if (isErr(d)) return d;
+        const f = Math.pow(10, d); return Math.round(a * f) / f;
+      }
+      const f = FNS[n.name]; if (!f) return ERR("#NAME?");
+      const nums = [];
+      for (const arg of n.args) {
+        const vs = arg.k === "range" ? rangeValues(arg, sid) : [evaluate(arg, sid)];
+        if (isErr(vs)) return vs;
+        for (const v of vs) { if (isErr(v)) return v; if (typeof v === "number") nums.push(v); }
+      }
+      return f(nums);
+    }
+  }
+}
+function recalc() { cache = new Map(); stack = new Set(); }
+
+function show(v) {
+  if (v === null) return "";
+  if (isErr(v)) return v.err;
+  if (typeof v === "number") return String(Number.isInteger(v) ? v : parseFloat(v.toPrecision(10)));
+  return v;
+}
+
+// ---------- rewriting references (row insert/delete, sheet rename) ----------
+function rewriteFormulas(fn) {
+  for (const s of W.sheets) for (const [k, raw] of Object.entries(s.cells)) {
+    if (raw[0] !== "=") continue;
+    s.cells[k] = "=" + raw.slice(1).replace(new RegExp(REF_RE.source.slice(1), "g"), (m, q, plain, c1, r1, c2, r2) => {
+      const name = q || plain || null;
+      const target = name ? sheetByName(name) : s;
+      const out = fn({ name, target, c1, r1: +r1, c2, r2: r2 ? +r2 : null, owner: s });
+      if (out === null) return "#REF!";
+      const prefix = out.name ? (/^[A-Za-z_][A-Za-z0-9_]*$/.test(out.name) ? out.name : `'${out.name}'`) + "!" : "";
+      return prefix + out.c1 + out.r1 + (out.c2 ? ":" + out.c2 + out.r2 : "");
+    });
+  }
+}
+function shiftCells(s, fromRow, delta) {
+  const moved = {};
+  for (const [k, v] of Object.entries(s.cells)) {
+    const m = /^([A-Z])(\d+)$/.exec(k); const r = +m[2];
+    if (delta < 0 && r >= fromRow && r < fromRow - delta) continue;     // deleted
+    moved[r >= fromRow ? m[1] + (r + delta) : k] = v;
+  }
+  s.cells = moved;
+}
+function insertRow(s, at) {
+  shiftCells(s, at, 1); s.rows++;
+  rewriteFormulas(x => {
+    if (x.target !== s) return x;
+    const r1 = x.r1 >= at ? x.r1 + 1 : x.r1, r2 = x.r2 == null ? null : (x.r2 >= at ? x.r2 + 1 : x.r2);
+    return { ...x, r1, r2 };
+  });
+}
+function deleteRow(s, at) {
+  rewriteFormulas(x => {
+    if (x.target !== s) return x;
+    if (x.r2 == null) return x.r1 === at ? null : { ...x, r1: x.r1 > at ? x.r1 - 1 : x.r1 };
+    let lo = Math.min(x.r1, x.r2), hi = Math.max(x.r1, x.r2);
+    if (lo === at && hi === at) return null;
+    if (hi >= at) hi--; if (lo > at) lo--;
+    return { ...x, r1: lo, r2: hi };
+  });
+  shiftCells(s, at, -1); s.rows--;
+}
+function renameSheet(s, name) {
+  const old = s.name;
+  rewriteFormulas(x => x.name && x.name.toLowerCase() === old.toLowerCase() ? { ...x, name } : x);
+  s.name = name;
+}
+
+// ---------- grid ----------
+const cur = () => sheet(W.active);
+function render() {
+  recalc();
+  const s = cur(), g = $("grid");
+  let html = "<thead><tr><th></th>";
+  for (let c = 0; c < COLS; c++) html += `<th class="${c === sel.col ? "hl" : ""}">${colName(c)}</th>`;
+  html += "</tr></thead><tbody>";
+  for (let r = 1; r <= s.rows; r++) {
+    html += `<tr><th class="${r === sel.row ? "hl" : ""}">${r}</th>`;
+    for (let c = 0; c < COLS; c++) {
+      const key = colName(c) + r, v = value(s.id, key);
+      const cls = [typeof v === "number" ? "num" : "", isErr(v) ? "err" : "", c === sel.col && r === sel.row ? "sel" : ""].join(" ").trim();
+      const text = show(v).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+      html += `<td data-c="${c}" data-r="${r}" class="${cls}">${text}</td>`;
+    }
+    html += "</tr>";
+  }
+  g.innerHTML = html + "</tbody>";
+  $("ref").textContent = colName(sel.col) + sel.row;
+  if (document.activeElement !== $("fx")) $("fx").value = s.cells[colName(sel.col) + sel.row] ?? "";
+  $("del-row").disabled = s.rows <= 1;
+  renderTabs();
+}
+function commit(c, r, raw) {
+  const s = cur(), key = colName(c) + r;
+  if (raw === "" || raw == null) delete s.cells[key]; else s.cells[key] = raw;
+  save();
+}
+function select(c, r) {
+  sel = { col: Math.max(0, Math.min(COLS - 1, c)), row: Math.max(1, Math.min(cur().rows, r)) };
+  render();
+  const td = $("grid").querySelector(`td[data-c="${sel.col}"][data-r="${sel.row}"]`);
+  td?.scrollIntoView({ block: "nearest", inline: "nearest" });
+}
+function startEdit(initial) {
+  const td = $("grid").querySelector(`td[data-c="${sel.col}"][data-r="${sel.row}"]`);
+  const inp = document.createElement("input");
+  inp.value = initial ?? cur().cells[colName(sel.col) + sel.row] ?? "";
+  td.textContent = ""; td.append(inp); inp.focus();
+  editing = { col: sel.col, row: sel.row, input: inp };
+  inp.addEventListener("input", () => $("fx").value = inp.value);
+  inp.addEventListener("keydown", e => {
+    if (e.key === "Enter") { e.preventDefault(); finishEdit(); select(sel.col, sel.row + 1); }
+    else if (e.key === "Tab") { e.preventDefault(); finishEdit(); select(sel.col + (e.shiftKey ? -1 : 1), sel.row); }
+    else if (e.key === "Escape") { editing = null; render(); }
+  });
+  inp.addEventListener("blur", () => { if (editing && editing.input === inp) { finishEdit(); render(); } });
+}
+function finishEdit() { if (!editing) return; const e = editing; editing = null; commit(e.col, e.row, e.input.value); }
+
+$("grid").addEventListener("mousedown", e => {
+  const td = e.target.closest("td"); if (!td || td.querySelector("input")) return;
+  e.preventDefault(); finishEdit(); select(+td.dataset.c, +td.dataset.r);
+});
+$("grid").addEventListener("dblclick", e => { if (e.target.closest("td")) startEdit(); });
+document.addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT" || editing || document.activeElement === $("fx")) return;
+  const k = e.key;
+  if (k === "ArrowUp") select(sel.col, sel.row - 1);
+  else if (k === "ArrowDown") select(sel.col, sel.row + 1);
+  else if (k === "ArrowLeft") select(sel.col - 1, sel.row);
+  else if (k === "ArrowRight" || k === "Tab") select(sel.col + 1, sel.row);
+  else if (k === "Enter" || k === "F2") startEdit();
+  else if (k === "Delete" || k === "Backspace") { commit(sel.col, sel.row, ""); render(); }
+  else if (k.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); startEdit(k); }
+  else return;
+  e.preventDefault();
+});
+$("fx").addEventListener("keydown", e => {
+  if (e.key === "Enter") { commit(sel.col, sel.row, $("fx").value); $("fx").blur(); select(sel.col, sel.row + 1); }
+  if (e.key === "Escape") { $("fx").blur(); render(); }
+});
+$("ins-row").onclick = () => { finishEdit(); insertRow(cur(), sel.row); save(); render(); };
+$("del-row").onclick = () => { finishEdit(); deleteRow(cur(), sel.row); save(); select(sel.col, sel.row); };
+
+// ---------- sheet tabs ----------
+let confirmDelete = false, tabNote = "";
+function renderTabs() {
+  const t = $("tabs"); t.innerHTML = "";
+  for (const s of W.sheets) {
+    const b = document.createElement("button");
+    b.className = "tab" + (s.id === W.active ? " on" : ""); b.textContent = s.name; b.title = "Double-click to rename";
+    b.onclick = () => { if (W.active !== s.id) { finishEdit(); W.active = s.id; confirmDelete = false; tabNote = ""; sel = { col: 0, row: 1 }; save(); render(); } };
+    b.ondblclick = () => {
+      const inp = document.createElement("input"); inp.value = s.name; b.replaceWith(inp); inp.focus(); inp.select();
+      let done = false;
+      const finish = ok => {
+        if (done) return; done = true;
+        const v = inp.value.trim();
+        if (ok && v && v !== s.name) {
+          if (sheetByName(v) && sheetByName(v) !== s) tabNote = `There is already a sheet called "${v}".`;
+          else if (v.includes("'") || v.includes("!")) tabNote = "Sheet names can't contain ' or !.";
+          else { renameSheet(s, v); tabNote = ""; save(); }
+        }
+        render();
+      };
+      inp.onkeydown = e => { if (e.key === "Enter") finish(true); if (e.key === "Escape") finish(false); };
+      inp.onblur = () => finish(true);
+    };
+    t.append(b);
+  }
+  const add = document.createElement("button"); add.textContent = "+"; add.title = "Add a sheet";
+  add.onclick = () => {
+    let n = W.sheets.length + 1; while (sheetByName("Sheet" + n)) n++;
+    const s = { id: "s" + W.nextId++, name: "Sheet" + n, rows: 100, cells: {} };
+    W.sheets.push(s); W.active = s.id; sel = { col: 0, row: 1 }; save(); render();
+  };
+  t.append(add);
+  if (W.sheets.length > 1) {
+    if (!confirmDelete) {
+      const del = document.createElement("button"); del.textContent = `Delete "${cur().name}"`;
+      del.onclick = () => { confirmDelete = true; renderTabs(); };
+      t.append(del);
+    } else {
+      const span = document.createElement("span"); span.className = "note warn";
+      span.textContent = `Delete "${cur().name}"? Formulas that use it will show #REF!.`;
+      const yes = document.createElement("button"); yes.textContent = "Delete";
+      yes.onclick = () => { W.sheets = W.sheets.filter(x => x.id !== W.active); W.active = W.sheets[0].id; confirmDelete = false; save(); render(); };
+      const no = document.createElement("button"); no.textContent = "Keep";
+      no.onclick = () => { confirmDelete = false; renderTabs(); };
+      t.append(span, yes, no);
+    }
+  }
+  if (tabNote) { const n = document.createElement("span"); n.className = "note warn"; n.textContent = tabNote; t.append(n); }
+}
+
+render();
+</script>
+</body>
+</html>

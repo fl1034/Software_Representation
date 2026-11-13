@@ -41,9 +41,10 @@ has a `"*"` key, which describes every child at once and is not a child itself:
 }
 ```
 
-`*` holds the children's `api` and any nested collections' own `*`
-(`/cards/*/checklist/*`). A collection whose children share nothing still has
-`"*": {}`, so the agent can tell its children are ids.
+`*` mirrors the shape of one child, and holds whatever is the same for every child:
+its `api`, and the `api` and `*` of any collection inside it (`/cards/*/checklist/*`).
+Those are written once there, never repeated in each child. A collection whose
+children share nothing still has `"*": {}`, so the agent can tell its children are ids.
 
 ### 3. Actions are listed in the tree and described in docs
 
@@ -156,9 +157,11 @@ busy nodes, so the agent can poll with `observe`.
 ```
 
 `observe` returns the node at a path, as of the latest well-defined state. Each answer
-has a size budget. While an answer is over budget, the app replaces the largest node
-in it with a stub. A stub the app makes on its own keeps the node's `api`, so the
-agent can still see what it could do there:
+has a size budget. While an answer is over budget, the app replaces a node with a stub:
+the smallest node whose folding alone brings the answer under budget, or, if no single
+node is enough, the largest node, and then it checks again. That way it hides as little
+as it can. A stub the app makes on its own keeps the node's `api`, so the agent can
+still see what it could do there:
 
 ```json
 "cards":{"api":["find"],"folded":"9 children, 1.6 KB"}
@@ -248,6 +251,9 @@ Each example has the app itself (`app.html`), its tree (`state.json`), its docs
 - [`examples/todo`](examples/todo): a to-do list. Small enough that nothing folds.
 - [`examples/kanban`](examples/kanban): a kanban board with columns, card limits,
   labels, members, checklists, comments and an archive.
+- [`examples/spreadsheet`](examples/spreadsheet): a two-sheet budget with formulas,
+  references between sheets, error values and row insert/delete. Its cells are
+  addressed by position, which the other examples avoid.
 
 `tools/fold.py` is a reference implementation of the queries (folding, views, `since`,
 overflow, `page`, `find`, busy nodes) and of the bookkeeping behind receipts and pings.
@@ -282,6 +288,10 @@ Add `--pretty` to any of these to indent the output for reading.
 
 - **Who writes the docs?** Here they're written by hand. An app could ship them, or a
   tool could generate them from the app's code.
+- **Pings for bulk changes.** Inserting one row in a spreadsheet renames every cell
+  below it, so the ping lists every one of them. The app could name their common
+  ancestor instead (`"changed": ["/sheets/s1/cells"]`) when a list would pass the cap.
+  See `examples/spreadsheet/NOTES.md`.
 - **Small values in pings.** A ping names changed paths but not their values, so the
   agent usually observes once more after acting. Including values under a small size
   would often save that call.

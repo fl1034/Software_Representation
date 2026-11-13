@@ -1,0 +1,27 @@
+{
+  "_version": 20,
+  "app": "Household Budget",
+  "sheets": {
+    "api": ["add"],
+    "*": {"api": ["rename", "delete", "insert_rows", "delete_rows"], "cells": {"api": ["set", "clear", "find"], "*": {}}},
+    "s1": {"name": "Budget", "rows": 100, "cells": {
+      "A1": "Category", "B1": "Jan", "C1": "Feb", "D1": "Mar", "E1": "Total", "F1": "Monthly avg",
+      "A2": "Rent", "B2": 1200, "C2": 1200, "D2": 1200, "E2": {"f": "=SUM(B2:D2)", "v": 3600}, "F2": {"f": "=ROUND(AVERAGE(B2:D2),2)", "v": 1200},
+      "A3": "Groceries", "B3": 410, "C3": 385, "D3": 452, "E3": {"f": "=SUM(B3:D3)", "v": 1247}, "F3": {"f": "=ROUND(AVERAGE(B3:D3),2)", "v": 415.67},
+      "A4": "Utilities", "B4": 165, "C4": 190, "D4": 140, "E4": {"f": "=SUM(B4:D4)", "v": 495}, "F4": {"f": "=ROUND(AVERAGE(B4:D4),2)", "v": 165},
+      "A5": "Transport", "B5": 96, "C5": 120, "D5": 88, "E5": {"f": "=SUM(B5:D5)", "v": 304}, "F5": {"f": "=ROUND(AVERAGE(B5:D5),2)", "v": 101.33},
+      "A6": "Internet", "B6": 55, "C6": 55, "D6": 55, "E6": {"f": "=SUM(B6:D6)", "v": 165}, "F6": {"f": "=ROUND(AVERAGE(B6:D6),2)", "v": 55},
+      "A7": "Total spent", "B7": {"f": "=SUM(B2:B6)", "v": 1926}, "C7": {"f": "=SUM(C2:C6)", "v": 1950}, "D7": {"f": "=SUM(D2:D6)", "v": 1935}, "E7": {"f": "=SUM(B7:D7)", "v": 5811}, "F7": {"f": "=ROUND(AVERAGE(B7:D7),2)", "v": 1937},
+      "A9": "Income", "B9": 3100, "C9": 3100, "D9": 3250, "E9": {"f": "=SUM(B9:D9)", "v": 9450},
+      "A10": "Left over", "B10": {"f": "=B9-B7", "v": 1174}, "C10": {"f": "=C9-C7", "v": 1150}, "D10": {"f": "=D9-D7", "v": 1315}, "E10": {"f": "=E9-E7", "v": 3639}
+    }},
+    "s2": {"name": "Summary", "rows": 100, "cells": {
+      "A1": "Quarter summary",
+      "A3": "Total spent", "B3": {"f": "=Budget!E7", "v": 5811},
+      "A4": "Total income", "B4": {"f": "=Budget!E9", "v": 9450},
+      "A5": "Saved", "B5": {"f": "=B4-B3", "v": 3639},
+      "A6": "Savings rate %", "B6": {"f": "=ROUND(B5/B4*100,1)", "v": 38.5},
+      "A7": "Biggest expense", "B7": {"f": "=MAX(Budget!E2:E6)", "v": 3600}
+    }}
+  }
+}

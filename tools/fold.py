@@ -302,11 +302,15 @@ def observe_since(tree, log, path, since, oldest_kept=0, budget=2048):
 # A submission marks nodes busy at once and settles them later. While busy, a node
 # shows its last well-defined value, and the root lists every busy path.
 
-def mark_busy(tree, submission, paths):
+def mark_busy(tree, submission, paths, progress=None):
     for p in paths:
         *parent, key = parts(p)
         node = get(tree, "/" + "/".join(parent))
-        node[key] = {"busy": {"by": submission, "last": node[key]}}
+        marker = {"by": submission}
+        if progress:
+            marker["progress"] = progress  # only when the app can really count its work
+        marker["last"] = node[key]
+        node[key] = {"busy": marker}
     tree.setdefault("busy", []).extend(paths)
 
 

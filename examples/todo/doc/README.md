@@ -32,6 +32,8 @@ has changed since version n.
 **Busy nodes** have no well-defined value yet. They show their last value as
 `{"busy": {"by": "<submission id>", "last": <value>}}`, and the root lists them under
 `"busy"`. Submissions on a busy node get the error `busy`; listen for its ping and retry.
+A busy marker may include `"progress": {"done": <n>, "total": <n>, "message": "..."}` when the
+app can count its work (`total` may be missing). Progress sends no ping; observe to see it.
 
 Long lists come back in batches of 100. `page` (see `page.md`) works on every
 collection, meaning every node with a `"*"`, without being listed in its `api`.

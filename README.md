@@ -113,6 +113,19 @@ what to do next where possible.
 "c4": { "busy": { "by": "s57", "last": { "name": "Done", "limit": null, "cards": ["k8"] } } }
 ```
 
+A busy marker may also carry `progress`, when the app genuinely knows how far along it
+is. It counts real units of work, with an optional message for the agent:
+
+```json
+"c4": { "busy": { "by": "s57", "progress": { "done": 44, "total": 100, "message": "Archiving cards: 44 of 100" },
+                  "last": { "name": "Done", "limit": null, "cards": ["k8", "..."] } } }
+```
+
+`total` may be left out when it isn't known (`{ "done": 44 }`). The app never estimates
+time remaining or makes up a percentage; an app that can't count leaves `progress` out.
+Progress is not a well-defined state: it doesn't change the version and sends no ping.
+The agent sees it only by observing.
+
 While anything is busy, the root lists it (`"busy": ["/columns/c4", "/cards/k8"]`), and
 a folded stub says how many busy nodes it hides. A submission on a busy node gets a
 receipt with feedback `busy` naming the submission it is waiting on, then a ping with

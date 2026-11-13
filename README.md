@@ -49,8 +49,9 @@ and pings, common errors, folding and versions. The root node points to it with 
 
 ### 4. Repeated children are described once
 
-The reserved key `"*"` describes every child of a node: its path pattern, its
-actions, and anything else shared. It can nest (`/cards/*/checklist/*`).
+The reserved key `"*"` describes every child of a node whose children are ids (a
+**collection**, see 8): its path pattern, its actions, and anything else shared.
+It can nest (`/cards/*/checklist/*`).
 
 ### 5. Shared facts sit on `*`
 
@@ -127,7 +128,7 @@ can't push still marks busy nodes, so the agent can poll with `observe`.
 ### 7. `observe` and folding
 
 Every app has three built-in queries on the root: `observe`, `view` (below) and
-`listen` (see 6).
+`listen` (see 6), and one on every collection: `page` (see 8).
 
 ```json
 { "action": "observe", "path": "/cards/k4" }
@@ -140,7 +141,7 @@ A stub the app makes on its own always keeps the node's `path` and `api`, so the
 can still see what it could do there:
 
 ```json
-"cards": { "path": "/cards", "api": ["page", "find"], "folded": "9 children, 1.8 KB. Observe /cards" }
+"cards": { "path": "/cards", "api": ["find"], "folded": "9 children, 1.9 KB. Observe /cards" }
 ```
 
 The rule is mechanical: the app doesn't guess what the agent needs.
@@ -189,14 +190,17 @@ observes without it.
 
 ### 8. Long lists: `overflow`, `page` and `find`
 
-A node never returns more than 100 children. Any collection that could grow past
-that always lists `page` and `find` in its `api`, whatever its current size:
+A **collection** is any node whose children are ids; it always has a `*` describing them.
+A collection never returns more than 100 children. Two queries help with the rest:
 
-- `page`: the children after a given id, in the collection's order. It uses a cursor
-  (`"after": "k100"`), not a page number, so items added or removed meanwhile
-  don't shift what comes next.
-- `find`: only the children whose fields equal the values given, and/or whose text
-  contains some words. Deliberately simple: exact matches plus a text search.
+- `page` is built in: it works on every collection, like `observe` works everywhere,
+  and isn't listed in any `api`. It returns the children after a given id, in the
+  collection's order. It uses a cursor (`"after": "k100"`), not a page number, so
+  items added or removed meanwhile don't shift what comes next. Its doc is `doc/page.md`.
+- `find` returns only the children whose fields equal the values given, and/or whose
+  text contains some words. Deliberately simple: exact matches plus a text search.
+  A collection that could grow past 100 always lists `find` in its `api`, whatever
+  its current size.
 
 Both reply in the same shape as `observe`. Only when a reply actually leaves children
 out does it carry a note, including the exact call for the next batch:

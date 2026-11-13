@@ -11,7 +11,7 @@ Replies stay under 2 KB. To fit, the app replaces large nodes with
 `{"path": ..., "api": [...], "folded": "<summary>. Observe <its path>"}`; observe that path
 to see it. To control this yourself, see `view.md`.
 
-A node never lists more than 100 children. If it has more, the reply ends with
+A collection never lists more than 100 children. If it has more, the reply ends with
 `"overflow": {"message": "...", "next": <call>}`: send `next` to get the following ones.
 
 **Only what changed:** add `"since": <version>`. Then `node` holds only the parts

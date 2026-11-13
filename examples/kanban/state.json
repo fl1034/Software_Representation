@@ -7,11 +7,13 @@
   "me": "u1",
 
   "members": {
+    "*": { "path": "/members/<member id>" },
     "u1": { "name": "You" },
     "u2": { "name": "Priya Shah" },
     "u3": { "name": "Sam Ortiz" }
   },
   "labels": {
+    "*": { "path": "/labels/<label id>" },
     "l1": { "name": "Bug" },
     "l2": { "name": "Feature" },
     "l3": { "name": "Design" },
@@ -33,7 +35,7 @@
 
   "cards": {
     "path": "/cards",
-    "api": ["page", "find"],
+    "api": ["find"],
     "*": {
       "path": "/cards/<card id>",
       "api": ["rename", "set_description", "set_labels", "assign", "set_due", "move", "archive", "restore", "delete", "add_checklist_item", "comment"],
@@ -46,8 +48,7 @@
         }
       },
       "comments": {
-        "path": "/cards/<card id>/comments",
-        "api": ["page"]
+        "*": { "path": "/cards/<card id>/comments/<comment id>" }
       }
     },
     "k1": { "title": "Dark mode for settings page", "labels": ["l2", "l3"] },

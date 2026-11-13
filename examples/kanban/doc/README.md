@@ -33,7 +33,8 @@ has changed since version n.
 `{"busy": {"by": "<submission id>", "last": <value>}}`, and the root lists them under
 `"busy"`. Submissions on a busy node get the error `busy`; listen for its ping and retry.
 
-Long lists come back in batches of 100; see `observe.md`.
+Long lists come back in batches of 100. `page` (see `page.md`) works on every
+collection, meaning every node with a `"*"`, without being listed in its `api`.
 
 Errors any submission can get: `unknown_action`, `bad_args`, `not_found`, `stale`, `busy`.
 Each action's doc lists its other errors.

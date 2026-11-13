@@ -6,7 +6,7 @@ checklist and comments, plus archive, restore and permanent delete.
 
 - `state.json`: the full tree, about 2.5 KB. At a 2 KB budget, `observe /`
   folds `/cards`.
-- `doc/`: one Markdown file per action plus a README, 26 files, about 0.4 KB each.
+- `doc/`: one Markdown file per action plus a README, 25 files, about 0.4 KB each.
 - `exchange.json`: an agent closing out a bug card, then hitting a card limit and a
   change made by someone else, clearing out Done with a slow `archive_all`,
   searching with `find`, and an overflowing list.

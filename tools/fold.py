@@ -115,8 +115,8 @@ def template_at(tree, path):
 
 
 def is_collection(tmpl):
-    """Children are ids (a `*` describes them, or the node can be paged), not fixed fields."""
-    return "*" in tmpl or "page" in tmpl.get("api", [])
+    """Children are ids, described by a `*`, not fixed fields. Every collection can be paged."""
+    return "*" in tmpl
 
 
 def window_all(tree, node, path, max_children, tmpl=None):

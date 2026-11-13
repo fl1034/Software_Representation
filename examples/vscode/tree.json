@@ -1,0 +1,305 @@
+{"version": 6127, "node": {
+  "app": "Visual Studio Code",
+
+  "product": {
+    "name": "Visual Studio Code", "version": "1.105.1", "quality": "stable", "commit": "7d842fb85a0275a4a8e4d7e040d2625abbf7f084",
+    "electron": "37.6.0", "chromium": "138.0.7204.251", "node": "22.19.0", "arch": "arm64", "os": "Darwin arm64 25.1.0",
+    "install": "/Applications/Visual Studio Code.app", "user_data": "/Users/alex/Library/Application Support/Code",
+    "extensions_dir": "/Users/alex/.vscode/extensions", "cli": "/usr/local/bin/code", "update": {"mode": "default", "state": "idle"}
+  },
+
+  "processes": {
+    "*": {"api": ["kill"]},
+    "main": {"pid": 2840, "kind": "electron-main", "cpu_pct": 0.4, "mem_mb": 162},
+    "window-1": {"pid": 2851, "kind": "window", "cpu_pct": 2.1, "mem_mb": 486},
+    "extension-host-1": {"pid": 2877, "kind": "extensionHost", "window": "/window", "cpu_pct": 6.8, "mem_mb": 618},
+    "shared": {"pid": 2846, "kind": "shared-process", "cpu_pct": 0.1, "mem_mb": 96},
+    "pty-host": {"pid": 2849, "kind": "ptyHost", "cpu_pct": 0.0, "mem_mb": 41, "terminals": ["/terminals/1", "/terminals/2", "/terminals/3"]},
+    "tsserver": {"pid": 2931, "kind": "language server", "server": "/language_servers/typescript", "cpu_pct": 3.2, "mem_mb": 412},
+    "gpu": {"pid": 2843, "kind": "gpu-process", "cpu_pct": 0.6, "mem_mb": 118},
+    "overflow": {"shown": 7, "total": 14, "next": {"action": "page", "path": "/processes", "after": "gpu"}}
+  },
+
+  "window": {
+    "api": ["reload", "close", "toggle_fullscreen", "set_zoom", "open_folder", "open_recent"],
+    "id": 1, "title": "CartSummary.tsx — storefront", "focused": true, "fullscreen": false, "zoom": 0,
+    "theme": {"color": "Default Dark Modern", "icons": "vs-seti", "product_icons": "Default"},
+    "layout": {
+      "api": ["show", "hide", "focus"],
+      "activity_bar": "left", "sidebar": {"visible": true, "view": "workbench.view.explorer"},
+      "panel": {"visible": true, "view": "terminal", "position": "bottom"},
+      "secondary_sidebar": {"visible": true, "view": "workbench.panel.chat"},
+      "minimap": false, "breadcrumbs": true, "zen_mode": false
+    },
+    "recent": ["/Users/alex/Code/storefront", "/Users/alex/Code/payments", "/Users/alex/Code/infra", "... 17 more items"]
+  },
+
+  "workspace": {
+    "kind": "folder", "name": "storefront", "trusted": true,
+    "folders": {"*": {"api": ["remove", "reveal"]}, "storefront": {"uri": "file:///Users/alex/Code/storefront"}},
+    "storage": "/Users/alex/Library/Application Support/Code/User/workspaceStorage/4b1e9d0c6a7f2e85c31d0a9b2f6e7c41",
+    "files_watched": 1842, "files_excluded": ["**/.git", "**/.next", "**/node_modules", "**/.DS_Store"]
+  },
+
+  "editors": {
+    "active": "/editors/groups/1/tabs/t3",
+    "groups": {
+      "api": ["split", "join_all"],
+      "*": {"api": ["close_all", "close_saved", "focus", "lock"],
+            "tabs": {"*": {"api": ["focus", "close", "pin", "unpin", "keep_open", "move_to_group", "set_selection", "reveal_line"]}}},
+      "1": {"active": true, "locked": false, "width_pct": 62,
+            "tabs": {
+              "t1": {"kind": "text", "document": "/documents/d4", "label": "package.json", "pinned": true},
+              "t2": {"kind": "text", "document": "/documents/d2", "label": "useDeliveryEstimate.ts", "dirty": false},
+              "t3": {"kind": "text", "document": "/documents/d1", "label": "CartSummary.tsx", "active": true, "dirty": true,
+                     "cursor": {"line": 88, "column": 17}, "selections": [[88, 17, 88, 17]], "visible_lines": [61, 112],
+                     "folded_regions": [[14, 31]], "breadcrumbs": ["src", "components", "CartSummary.tsx", "CartSummary", "estimateLabel"]},
+              "t4": {"kind": "diff", "label": "checkout.ts (Working Tree)", "left": "git:/files/src/lib/checkout.ts?HEAD", "right": "/documents/d3", "preview": true}
+            }},
+      "2": {"active": false, "width_pct": 38,
+            "tabs": {
+              "t5": {"kind": "text", "document": "/documents/d5", "label": "CartSummary.test.tsx", "active": true, "cursor": {"line": 42, "column": 5}},
+              "t6": {"kind": "webview", "label": "Settings", "view": "workbench.editor.settings2", "query": "format on save"}
+            }}
+    },
+    "recently_closed": ["/files/src/app/cart/page.tsx", "/files/next.config.ts"]
+  },
+
+  "documents": {
+    "*": {"api": ["edit", "save", "save_as", "revert", "format", "organize_imports", "rename_symbol", "find_references", "go_to_definition", "change_language", "change_encoding", "change_eol"]},
+    "d1": {
+      "uri": "file:///Users/alex/Code/storefront/src/components/CartSummary.tsx", "file": "/files/src/components/CartSummary.tsx",
+      "language": "typescriptreact", "version": 214, "saved_version": 201, "dirty": true,
+      "encoding": "utf8", "eol": "LF", "indent": {"spaces": true, "size": 2}, "line_count": 196,
+      "lines": [
+        "import { useMemo } from \"react\";",
+        "import { formatMoney } from \"@/lib/money\";",
+        "import { useDeliveryEstimate } from \"@/hooks/useDeliveryEstimate\";",
+        "import type { Cart } from \"@/types/cart\";",
+        "",
+        "type Props = {",
+        "  cart: Cart;",
+        "  locale: string;",
+        "};",
+        "",
+        "... 186 more items"
+      ],
+      "unsaved_edits": [{"range": [86, 1, 92, 4], "inserted_lines": 7, "deleted_lines": 2}]
+    },
+    "d2": {"uri": "file:///Users/alex/Code/storefront/src/hooks/useDeliveryEstimate.ts", "file": "/files/src/hooks/useDeliveryEstimate.ts",
+           "language": "typescript", "version": 12, "dirty": false, "encoding": "utf8", "eol": "LF", "line_count": 58, "lines": ["58 items"]},
+    "d3": {"uri": "file:///Users/alex/Code/storefront/src/lib/checkout.ts", "file": "/files/src/lib/checkout.ts",
+           "language": "typescript", "version": 3, "dirty": false, "line_count": 141, "lines": ["141 items"]},
+    "d4": {"uri": "file:///Users/alex/Code/storefront/package.json", "file": "/files/package.json",
+           "language": "json", "version": 1, "dirty": false, "line_count": 47, "lines": ["47 items"]},
+    "d5": {"uri": "file:///Users/alex/Code/storefront/src/components/CartSummary.test.tsx", "file": "/files/src/components/CartSummary.test.tsx",
+           "language": "typescriptreact", "version": 6, "dirty": false, "line_count": 73, "lines": ["73 items"]}
+  },
+
+  "files": {
+    "api": ["find", "new_file", "new_folder"],
+    "*": {"api": ["open", "rename", "delete", "move", "copy", "new_file", "new_folder", "reveal_in_finder", "open_in_terminal", "compare_with"]},
+    ".vscode": {"settings.json": {"size": 412}, "launch.json": {"size": 688}, "extensions.json": {"size": 141}},
+    ".github": {"folded": "2 children, 0.2 KB"},
+    "node_modules": {"excluded_from_search": true, "folded": "694 children, 38.1 KB"},
+    "public": {"folded": "11 children, 0.9 KB"},
+    "src": {
+      "app": {"folded": "9 children, 1.4 KB"},
+      "components": {
+        "CartSummary.tsx": {"size": 6113, "git": "M", "problems": {"errors": 1, "warnings": 1}, "open_in": ["/editors/groups/1/tabs/t3"]},
+        "CartSummary.test.tsx": {"size": 2290, "open_in": ["/editors/groups/2/tabs/t5"]},
+        "DeliveryBadge.tsx": {"size": 1407, "git": "U"},
+        "ProductCard.tsx": {"size": 3884},
+        "overflow": {"shown": 4, "total": 23, "next": {"action": "page", "path": "/files/src/components", "after": "ProductCard.tsx"}}
+      },
+      "hooks": {"useDeliveryEstimate.ts": {"size": 1922, "git": "A", "open_in": ["/editors/groups/1/tabs/t2"]}, "useCart.ts": {"size": 2401, "problems": {"warnings": 1}}},
+      "lib": {"checkout.ts": {"size": 4970, "git": "M"}, "money.ts": {"size": 812}, "api.ts": {"size": 3015}},
+      "types": {"cart.ts": {"size": 1104}}
+    },
+    ".env.local": {"size": 233, "git": "ignored"},
+    ".gitignore": {"size": 391},
+    "eslint.config.mjs": {"size": 703},
+    "next.config.ts": {"size": 524},
+    "package.json": {"size": 1688, "open_in": ["/editors/groups/1/tabs/t1"]},
+    "package-lock.json": {"size": 412877},
+    "tsconfig.json": {"size": 640}
+  },
+
+  "scm": {
+    "providers": {
+      "*": {"api": ["commit", "commit_staged", "pull", "push", "sync", "fetch", "checkout", "create_branch", "stash", "stash_pop"]},
+      "git": {
+        "repository": "/Users/alex/Code/storefront", "remote": {"origin": "git@github.com:shop/storefront.git"},
+        "branch": "feature/delivery-estimate", "upstream": "origin/feature/delivery-estimate", "ahead": 2, "behind": 0,
+        "head": {"commit": "a41c9e2", "message": "Show delivery estimate on cart page", "author": "Priya Nair", "at": "2026-11-12T17:40:03-06:00"},
+        "commit_message": "", "autofetch": {"enabled": true, "last": "2026-11-13T02:31:09-06:00"},
+        "staged": {"*": {"api": ["unstage", "open_changes", "open_file"]},
+                   "s1": {"file": "/files/src/hooks/useDeliveryEstimate.ts", "status": "added"}},
+        "changes": {"*": {"api": ["stage", "discard", "open_changes", "open_file"]},
+                    "c1": {"file": "/files/src/components/CartSummary.tsx", "status": "modified", "lines": {"added": 14, "removed": 3}},
+                    "c2": {"busy": {"by": "s6127", "last": {"file": "/files/src/lib/checkout.ts", "status": "modified", "lines": {"added": 2, "removed": 9}}}},
+                    "c3": {"file": "/files/src/components/DeliveryBadge.tsx", "status": "untracked"}},
+        "stashes": [{"index": 0, "message": "WIP on main: 0b9e6d4 Update footer links"}],
+        "branches": ["main", "feature/delivery-estimate", "fix/currency-rounding", "... 6 more items"]
+      }
+    }
+  },
+
+  "problems": {
+    "api": ["find"],
+    "*": {"api": ["open", "quick_fix", "explain"]},
+    "counts": {"errors": 1, "warnings": 2, "info": 0},
+    "p1": {"severity": "error", "source": "ts", "code": 2322, "file": "/files/src/components/CartSummary.tsx", "range": [91, 11, 91, 24],
+           "message": "Type 'number | undefined' is not assignable to type 'number'.\n  Type 'undefined' is not assignable to type 'number'.",
+           "quick_fixes": ["Add non-null assertion", "Add 'undefined' to type annotation"]},
+    "p2": {"severity": "warning", "source": "eslint", "code": "react-hooks/exhaustive-deps", "file": "/files/src/components/CartSummary.tsx", "range": [74, 6, 74, 25],
+           "message": "React Hook useMemo has a missing dependency: 'locale'. Either include it or remove the dependency array.",
+           "quick_fixes": ["Update the dependencies array to be: [cart.items, estimate, locale]"]},
+    "p3": {"severity": "warning", "source": "eslint", "code": "@typescript-eslint/no-unused-vars", "file": "/files/src/hooks/useCart.ts", "range": [3, 10, 3, 18],
+           "message": "'CartLine' is defined but never used."}
+  },
+
+  "search": {
+    "api": ["search", "replace_all", "clear"],
+    "query": {"text": "estimateLabel", "regex": false, "case_sensitive": false, "whole_word": true, "include": "src/**", "exclude": ""},
+    "results": {"*": {"api": ["open", "replace", "dismiss"]},
+                "r1": {"file": "/files/src/components/CartSummary.tsx", "line": 88, "preview": "  const estimateLabel = useMemo(() => {"},
+                "r2": {"file": "/files/src/components/CartSummary.tsx", "line": 131, "preview": "        <span className=\"estimate\">{estimateLabel}</span>"},
+                "r3": {"file": "/files/src/components/CartSummary.test.tsx", "line": 40, "preview": "  it(\"shows the estimateLabel for UK addresses\", () => {"}},
+    "counts": {"results": 3, "files": 2}
+  },
+
+  "terminals": {
+    "api": ["create", "split"],
+    "*": {"api": ["send_text", "run_selected_text", "clear", "kill", "focus", "rename"]},
+    "1": {"name": "zsh", "active": true, "pid": 3120, "shell": "/bin/zsh", "cwd": "/Users/alex/Code/storefront", "shell_integration": true,
+          "last_command": {"line": "git log --oneline -3", "exit_code": 0, "at": "2026-11-13T02:38:55-06:00"},
+          "output": ["a41c9e2 (HEAD -> feature/delivery-estimate) Show delivery estimate on cart page",
+                     "4c11e07 Add useDeliveryEstimate hook",
+                     "0b9e6d4 (origin/main, main) Update footer links",
+                     "alex@alexs-mbp storefront % "]},
+    "2": {"name": "npm: dev", "task": "/tasks/npm: dev", "pid": 3188, "cwd": "/Users/alex/Code/storefront",
+          "output": ["   ▲ Next.js 15.5.4", "   - Local:        http://localhost:3000", " ✓ Ready in 1412ms", " ○ Compiling /cart ...", " ✓ Compiled /cart in 873ms (1127 modules)", "... 38 more items"]},
+    "3": {"name": "npm: test", "task": "/tasks/npm: test", "pid": 3402, "cwd": "/Users/alex/Code/storefront",
+          "output": [" PASS  src/lib/money.test.ts", " PASS  src/hooks/useCart.test.ts", " RUNS  src/components/CartSummary.test.tsx"]}
+  },
+
+  "tasks": {
+    "*": {"api": ["run", "terminate", "restart"]},
+    "npm: dev": {"source": "npm", "script": "next dev --turbopack", "background": true, "running": true, "terminal": "/terminals/2"},
+    "npm: test": {"busy": {"by": "s6119", "progress": {"done": 7, "total": 12, "message": "Test suites: 7 of 12"},
+                           "cancel": {"action": "cancel", "path": "/", "submission": "s6119"},
+                           "last": {"source": "npm", "script": "jest", "group": "test", "running": false, "last_exit": 1, "terminal": "/terminals/3"}}},
+    "npm: build": {"source": "npm", "script": "next build", "group": "build", "running": false, "last_exit": 0},
+    "npm: lint": {"source": "npm", "script": "next lint", "running": false},
+    "tsc: watch - tsconfig.json": {"source": "typescript", "running": false, "problem_matcher": "$tsc-watch"}
+  },
+
+  "debug": {
+    "configurations": {
+      "*": {"api": ["start", "start_without_debugging"]},
+      "Next.js: debug server-side": {"type": "node-terminal", "request": "launch", "command": "npm run dev", "from": "/files/.vscode/launch.json"},
+      "Next.js: debug client-side": {"type": "chrome", "request": "launch", "url": "http://localhost:3000", "from": "/files/.vscode/launch.json"},
+      "Jest: current file": {"type": "node", "request": "launch", "program": "${workspaceFolder}/node_modules/.bin/jest", "args": ["${relativeFile}"], "from": "/files/.vscode/launch.json"}
+    },
+    "sessions": {"*": {"api": ["pause", "continue", "step_over", "step_into", "step_out", "restart", "stop", "evaluate"]}},
+    "breakpoints": {
+      "api": ["add", "remove_all", "disable_all"],
+      "*": {"api": ["enable", "disable", "remove", "edit_condition"]},
+      "b1": {"file": "/files/src/hooks/useDeliveryEstimate.ts", "line": 27, "enabled": true},
+      "b2": {"file": "/files/src/lib/checkout.ts", "line": 112, "enabled": false, "condition": "order.items.length > 10"},
+      "uncaught_exceptions": true, "caught_exceptions": false
+    }
+  },
+
+  "extensions": {
+    "api": ["install", "find", "check_for_updates"],
+    "*": {"api": ["enable", "disable", "enable_for_workspace", "disable_for_workspace", "update", "uninstall", "show_details"]},
+    "dbaeumer.vscode-eslint": {"name": "ESLint", "version": "3.0.16", "publisher": "Microsoft", "enabled": true, "activated": true, "activation_ms": 212},
+    "esbenp.prettier-vscode": {"name": "Prettier - Code formatter", "version": "11.0.0", "publisher": "Prettier", "enabled": true, "activated": true, "activation_ms": 97},
+    "bradlc.vscode-tailwindcss": {"name": "Tailwind CSS IntelliSense", "version": "0.14.28", "publisher": "Tailwind Labs", "enabled": true, "activated": true},
+    "github.copilot-chat": {"name": "GitHub Copilot Chat", "version": "0.32.4", "publisher": "GitHub", "enabled": true, "activated": true, "signed_in_as": "/accounts/github"},
+    "eamodio.gitlens": {"name": "GitLens — Git supercharged", "version": "17.6.2", "publisher": "GitKraken", "enabled": false, "disabled_for": "workspace"},
+    "orta.vscode-jest": {"name": "Jest", "version": "6.4.3", "publisher": "Orta", "enabled": true, "activated": true},
+    "ms-azuretools.vscode-docker": {"busy": {"by": "s6125", "progress": {"done": 14.2, "total": 31.8, "message": "Updating to 2.0.1: 14.2 MB of 31.8 MB"},
+                                             "last": {"name": "Container Tools", "version": "2.0.0", "publisher": "Microsoft", "enabled": true, "activated": false}}},
+    "recommended": ["ms-playwright.playwright", "yoavbls.pretty-ts-errors"],
+    "overflow": {"shown": 7, "total": 112, "next": {"action": "page", "path": "/extensions", "after": "ms-azuretools.vscode-docker"}}
+  },
+
+  "language_servers": {
+    "*": {"api": ["restart", "show_output"]},
+    "typescript": {"state": "ready", "version": "5.9.3", "source": "workspace", "tsdk": "node_modules/typescript/lib", "projects": ["/Users/alex/Code/storefront/tsconfig.json"], "process": "/processes/tsserver"},
+    "eslint": {"state": "ready", "version": "9.37.0", "config": "/files/eslint.config.mjs", "from": "/extensions/dbaeumer.vscode-eslint"},
+    "tailwindcss": {"state": "ready", "version": "4.1.14", "from": "/extensions/bradlc.vscode-tailwindcss"},
+    "json": {"state": "ready", "schemas": ["https://json.schemastore.org/package.json", "https://json.schemastore.org/tsconfig.json"]}
+  },
+
+  "commands": {
+    "api": ["run", "find"],
+    "ids": ["workbench.action.quickOpen", "workbench.action.showCommands", "workbench.action.files.save", "workbench.action.files.saveAll",
+            "editor.action.formatDocument", "editor.action.quickFix", "editor.action.rename", "workbench.action.terminal.new",
+            "git.commit", "git.push", "testing.runAll", "workbench.action.debug.start", "... 2691 more items"],
+    "recent": ["typescript.restartTsServer", "workbench.action.reloadWindow", "git.stage", "editor.action.organizeImports"]
+  },
+
+  "keybindings": {
+    "api": ["add", "remove", "reset"],
+    "user": [{"key": "cmd+shift+t", "command": "workbench.action.terminal.new"},
+             {"key": "cmd+k cmd+f", "command": "editor.action.formatDocument", "when": "editorHasDocumentFormattingProvider && editorTextFocus"},
+             {"key": "ctrl+`", "command": "-workbench.action.terminal.toggleTerminal"}],
+    "defaults": ["1184 items"],
+    "keymap": "macOS"
+  },
+
+  "settings": {
+    "api": ["find"],
+    "*": {"*": {"api": ["set", "reset"]}},
+    "user": {"file": "/Users/alex/Library/Application Support/Code/User/settings.json",
+             "editor.fontFamily": "\"JetBrains Mono\", Menlo, monospace", "editor.fontSize": 13, "editor.formatOnSave": true,
+             "editor.defaultFormatter": "esbenp.prettier-vscode", "editor.minimap.enabled": false, "editor.inlineSuggest.enabled": true,
+             "files.autoSave": "off", "workbench.colorTheme": "Default Dark Modern", "terminal.integrated.fontSize": 12,
+             "git.autofetch": true, "git.confirmSync": false, "typescript.updateImportsOnFileMove.enabled": "always",
+             "chat.agent.enabled": true, "telemetry.telemetryLevel": "error"},
+    "workspace": {"file": "/files/.vscode/settings.json",
+                  "editor.tabSize": 2, "typescript.tsdk": "node_modules/typescript/lib", "eslint.workingDirectories": ["."],
+                  "files.exclude": {"**/.next": true}, "search.exclude": {"**/node_modules": true}},
+    "language": {"[json]": {"editor.defaultFormatter": "vscode.json-language-features"}, "[markdown]": {"editor.wordWrap": "on"}},
+    "settings_sync": {"enabled": true, "account": "/accounts/github", "last_synced": "2026-11-13T01:52:40-06:00"}
+  },
+
+  "chat": {
+    "api": ["new_session", "send"],
+    "mode": "agent", "model": "Claude Opus 5.5",
+    "sessions": {"*": {"api": ["open", "delete", "export"]}, "folded": "6 children, 41.3 KB"}
+  },
+
+  "output": {
+    "*": {"api": ["show", "clear"]},
+    "Git": {"lines": ["2026-11-13 02:31:09.884 [info] > git fetch [412ms]", "2026-11-13 02:38:55.120 [info] > git status -z -uall [38ms]", "... 961 more items"]},
+    "TypeScript": {"lines": ["[info] Using tsserver from: /Users/alex/Code/storefront/node_modules/typescript/lib", "... 3108 more items"]},
+    "ESLint": {"lines": ["[Info  - 02:12:43] ESLint server is running.", "... 211 more items"]},
+    "Extension Host": {"lines": ["3402 items"]},
+    "overflow": {"shown": 4, "total": 27, "next": {"action": "page", "path": "/output", "after": "Extension Host"}}
+  },
+
+  "notifications": {
+    "*": {"api": ["dismiss", "run_action"]},
+    "n41": {"severity": "info", "source": "Container Tools", "message": "Updating Container Tools to 2.0.1…", "progress": "/extensions/ms-azuretools.vscode-docker"},
+    "n38": {"severity": "warning", "source": "Jest", "message": "Jest: 1 test suite failed in the last run.", "actions": ["Open Test Explorer", "Show Output"]},
+    "do_not_disturb": false
+  },
+
+  "accounts": {
+    "*": {"api": ["sign_out", "manage_trusted_extensions"]},
+    "github": {"label": "alexrivera-dev", "provider": "GitHub", "used_by": ["github.copilot-chat", "vscode.github", "settings_sync"]},
+    "microsoft": {"signed_in": false}
+  },
+
+  "busy": ["/tasks/npm: test", "/extensions/ms-azuretools.vscode-docker", "/scm/providers/git/changes/c2"],
+  "alerts": [
+    {"by": "s6127", "message": "Are you sure you want to discard changes in checkout.ts? This is IRREVERSIBLE! Your current working set will be FOREVER LOST if you proceed.",
+     "answer_by": "caller", "expires_in": 286,
+     "confirm": {"action": "confirm", "path": "/", "submission": "s6127"}, "cancel": {"action": "cancel", "path": "/", "submission": "s6127"}}
+  ]
+}}

@@ -66,16 +66,37 @@ Every call is one JSON object:
 { "action": "move", "path": "/cards/k4", "column": "c3" }
 ```
 
-Replies:
+There are two kinds of feedback.
+
+**The reply: the element confirms what happened to it.** It comes back as soon as
+the action is done:
 
 ```json
-{ "ok": true, "version": 39, "changes": [{ "op": "set", "path": "/columns/c3/cards", "value": ["k7", "k4"] }] }
-{ "ok": false, "error": "column_full", "message": "Review is at its limit of 2 cards (k7, k4)." }
+{ "ok": true, "path": "/cards/k4", "action": "move", "version": 39 }
+{ "ok": false, "path": "/cards/k6", "action": "move", "error": "column_full", "message": "Review is at its limit of 2 cards (k7, k4)." }
 ```
 
-A success lists every change as `add`, `set` or `remove` at a path, so the agent can
-update what it already knows without observing again. Errors have a fixed code and
-a message written for the agent, which says what to do next where possible.
+A reply may also list `changes` (each an `add`, `set` or `remove` at a path), but
+only if the list is complete. An app that can't be sure of every side effect leaves
+`changes` out, and the agent observes instead (see 7). So the agent never has to
+wonder whether a list is partial. Each action's doc says which kind of reply it gives.
+
+Errors have a fixed code and a message written for the agent, which says what to do
+next where possible.
+
+**Observation: the agent works out what changed.** For actions with wide or
+unpredictable effects, the agent observes the tree, usually with `since` (see 7),
+and decides for itself what the changes mean.
+
+**Actions that take time** don't wait for the result. The reply says the work has
+started and gives the path of a node that tracks it:
+
+```json
+{ "ok": true, "path": "/imports", "action": "start", "version": 40, "status": "/imports/j7" }
+```
+
+The agent observes that node, or the tree with `since`, whenever it chooses.
+(Neither example has such an action yet.)
 
 ### 7. `observe` and folding
 
@@ -93,7 +114,27 @@ budget, the app replaces its largest child with a stub that says how to see it:
 ```
 
 The rule is mechanical: the app doesn't guess what the agent needs.
-`tools/fold.py` is a reference implementation of folding, overflow, `page` and `find`.
+
+**`since`** returns only what changed after a given version:
+
+```json
+{ "action": "observe", "path": "/", "since": 42 }
+→ { "ok": true, "path": "/", "action": "observe", "version": 43, "since": 42,
+    "node": { "columns": { "c4": { "cards": [] } }, "cards": { "k8": { "archived": "c4" } } },
+    "removed": [] }
+```
+
+`node` holds only the changed parts, nested under their parents; anything not shown is
+unchanged. `removed` lists paths deleted since then.
+
+This takes no understanding of side effects from the app, only bookkeeping. Whenever
+it writes a value, it stamps that node and every node above it with the new version.
+Whenever it deletes one, it keeps a deletion marker for a while. `since` follows the
+stamps down to whatever was written. Once deletion markers older than a version have
+been thrown away, `since` for that version fails with `too_old`, and the agent
+observes without it.
+
+`tools/fold.py` is a reference implementation of folding, `since`, overflow, `page` and `find`.
 
 ### 8. Long lists: `overflow`, `page` and `find`
 

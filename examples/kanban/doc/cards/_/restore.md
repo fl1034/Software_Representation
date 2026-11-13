@@ -4,7 +4,7 @@ Put an archived card back at the bottom of the column it came from, or of the fi
 
 Call: `{"action": "restore", "path": "/cards/<card id>"}`
 
-Changes: sets `archived` to `false` and sets the column's `cards`.
+Reply lists its changes: sets `archived` to `false` and sets the column's `cards`.
 
 Errors:
 - `not_archived`

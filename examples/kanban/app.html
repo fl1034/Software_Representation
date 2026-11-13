@@ -232,6 +232,12 @@ function archiveCard(id) {
   Object.assign(S.cards[id], { archived: true, archivedFrom: col.id });
   S.archive.unshift(id); save(); render();
 }
+function archiveAll(colId) {
+  const col = S.columns.find(c => c.id === colId);
+  const n = col.cards.length;
+  for (const id of [...col.cards]) archiveCard(id);
+  flash(`Archived ${n} card${n === 1 ? "" : "s"} from "${col.name}". Restore them from Archived.`);
+}
 function restoreCard(id) {
   const c = S.cards[id];
   const col = S.columns.find(x => x.id === c.archivedFrom) || S.columns[0];
@@ -279,6 +285,12 @@ function render() {
       save(); render();
     }, "number");
     head.append(name, count);
+    if (col.cards.length > 0) {
+      const all = document.createElement("button"); all.className = "link"; all.textContent = "Archive all";
+      all.style.fontSize = "12px";
+      all.onclick = () => archiveAll(col.id);
+      head.append(all);
+    }
     if (col.cards.length === 0 && S.columns.length > 1) {
       const del = document.createElement("button"); del.className = "link"; del.textContent = "✕";
       del.setAttribute("aria-label", `Delete column ${col.name}`);

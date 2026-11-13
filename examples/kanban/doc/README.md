@@ -11,11 +11,13 @@ A `"*"` key describes every child of its node; it is not a child itself.
 Add `"version": <n>` to any call to have it refused with `stale` if the
 board has changed since version n.
 
-**Replies:**
-- Success: `{"ok": true, "version": <n>, "changes": [...]}`. Each change is
-  `{"op": "add" | "set" | "remove", "path": "<path>", "value": <value>}`, without
-  `value` for `remove`. Apply them to your copy of the tree.
-- Failure: `{"ok": false, "error": "<code>", "message": "<explanation>"}`.
+**Replies** name the element and action, and come back when the action is done:
+- Success: `{"ok": true, "path": "<path>", "action": "<action>", "version": <n>}`.
+  Most actions also give `"changes": [...]`, the complete list of what changed, each
+  `{"op": "add" | "set" | "remove", "path": "<path>", "value": <value>}` (no `value` for
+  `remove`). Apply them to your copy of the tree. An action's doc says whether it lists
+  its changes; if it doesn't, observe with `since` to find out.
+- Failure: `{"ok": false, "path": "<path>", "action": "<action>", "error": "<code>", "message": "<explanation>"}`.
 
 Long lists come back in batches of 100; see `observe.md`.
 

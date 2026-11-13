@@ -1,9 +1,12 @@
-"""Reference implementation of `observe`, `page` and `find`.
+"""Reference implementation of `observe` (with folding and `since`), `page` and `find`.
 
 Usage:
   python3 tools/fold.py <state.json> <path> [--budget 2048] [--max-children 100]
   python3 tools/fold.py <state.json> <path> --after <id>
   python3 tools/fold.py <state.json> <path> --find '{"where": {...}, "text": "..."}'
+
+`since` needs a change log, so it is available from Python only: see `apply` and
+`observe_since` below.
 
 Prints the reply an app would send. Everything here is deliberately mechanical:
 
@@ -82,8 +85,8 @@ def fold(node, path, budget):
     return node
 
 
-def reply(tree, path, node):
-    return {"ok": True, "version": tree.get("version"), "path": path, "node": node}
+def reply(tree, path, node, action="observe"):
+    return {"ok": True, "path": path, "action": action, "version": tree.get("version"), "node": node}
 
 
 def observe(tree, path, budget=2048, max_children=100):
@@ -97,7 +100,7 @@ def page(tree, path, after, budget=2048, max_children=100):
     node = get(tree, path)
     keys = data_keys(node)
     rest = keys[keys.index(after) + 1:] if after in keys else keys
-    return reply(tree, path, fold(window(tree, node, path, rest, max_children, {"action": "page", "path": path}), path, budget))
+    return reply(tree, path, fold(window(tree, node, path, rest, max_children, {"action": "page", "path": path}), path, budget), "page")
 
 
 def matches(child, defaults, where, text):
@@ -125,7 +128,61 @@ def find(tree, path, where=None, text=None, after=None, budget=2048, max_childre
     call = {"action": "find", "path": path}
     if where: call["where"] = where
     if text: call["text"] = text
-    return reply(tree, path, fold(window(tree, node, path, keys, max_children, call, "matches"), path, budget))
+    return reply(tree, path, fold(window(tree, node, path, keys, max_children, call, "matches"), path, budget), "find")
+
+
+# ---------- since ----------
+# A real app stamps each node it writes, and its ancestors, with the new version,
+# and keeps deletion markers for a while. Here a flat log of writes stands in for
+# both: one entry per change, {"version", "op", "path"}.
+
+def parts(path):
+    return [p for p in path.split("/") if p]
+
+
+def apply(tree, log, changes):
+    """Apply add/set/remove changes as one new version, and record them in the log."""
+    tree["version"] += 1
+    for c in changes:
+        *parent, key = parts(c["path"])
+        node = get(tree, "/" + "/".join(parent))
+        if c["op"] == "remove":
+            node.pop(key, None)
+        else:
+            node[key] = copy.deepcopy(c["value"])
+        log.append({"version": tree["version"], "op": c["op"], "path": c["path"]})
+    return tree["version"]
+
+
+def exists(tree, path):
+    try:
+        get(tree, path); return True
+    except (KeyError, TypeError):
+        return False
+
+
+def observe_since(tree, log, path, since, oldest_kept=0, budget=2048):
+    if since < oldest_kept:
+        return {"ok": False, "path": path, "action": "observe", "error": "too_old",
+                "message": f"Changes before version {oldest_kept} are no longer kept. Observe without since."}
+    prefix = path.rstrip("/") + "/"
+    recent = [e for e in log if e["version"] > since and (e["path"] + "/").startswith(prefix)]
+    written = sorted({e["path"] for e in recent if e["op"] != "remove" and exists(tree, e["path"])}, key=len)
+    removed = sorted({e["path"] for e in recent if e["op"] == "remove" and not exists(tree, e["path"])})
+    node, taken = {}, []
+    for p in written:
+        if any((p + "/").startswith(t + "/") for t in taken):
+            continue  # an ancestor is already included whole
+        taken.append(p)
+        rel = parts(p)[len(parts(path)):]
+        cur = node
+        for k in rel[:-1]:
+            cur = cur.setdefault(k, {})
+        cur[rel[-1]] = copy.deepcopy(get(tree, p))
+    r = reply(tree, path, fold(node, path, budget))
+    r["since"] = since
+    r["removed"] = removed
+    return r
 
 
 if __name__ == "__main__":

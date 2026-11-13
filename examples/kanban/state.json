@@ -23,7 +23,7 @@
     "api": ["add"],
     "*": {
       "path": "/columns/<column id>",
-      "api": ["rename", "set_limit", "delete", "add_card"]
+      "api": ["rename", "set_limit", "delete", "add_card", "archive_all"]
     },
     "c1": { "name": "Backlog",     "limit": null, "cards": ["k1", "k2", "k3"] },
     "c2": { "name": "In progress", "limit": 3,    "cards": ["k4", "k5", "k6"] },

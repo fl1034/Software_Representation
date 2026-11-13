@@ -4,7 +4,7 @@ Bring back the tasks removed by the last `delete` or `clear_done`, in their old 
 
 Call: `{"action": "undo", "path": "/tasks"}`
 
-Changes: adds each restored task back.
+Reply lists its changes: adds each restored task back.
 
 Errors:
 - `nothing_to_undo`

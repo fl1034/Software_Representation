@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Release Desk</title>
+<style>
+  /* Layout: app panels on the left, the agent console on the right; stacked on narrow screens. */
+  :root {
+    --bg: #f3f4f6; --panel: #ffffff; --line: #dde0e5; --text: #16191d; --muted: #646b75;
+    --accent: #2457c5; --ok: #1d7a46; --ok-bg: #e3f3e9; --bad: #b42318; --bad-bg: #fdecea;
+    --warn: #8a5a00; --warn-bg: #fff4d6; --run: #6c3fc4; --run-bg: #efe8fb;
+    --con-bg: #111418; --con-text: #d7dce3; --con-muted: #8a93a0; --con-line: #262b33;
+    --con-out: #7fb4ff; --con-in: #8fd6a4; --con-event: #e8b65c; --con-note: #c9a3ff;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1114; --panel: #171a1f; --line: #2a2f37; --text: #e5e8ec; --muted: #98a0ab;
+      --accent: #7aa2f7; --ok: #6fd39a; --ok-bg: #16301f; --bad: #f08a80; --bad-bg: #3a1a17;
+      --warn: #f0c46a; --warn-bg: #352a10; --run: #b99cf2; --run-bg: #261c3d;
+      --con-bg: #0a0c0f; --con-line: #20252c; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1114; --panel: #171a1f; --line: #2a2f37; --text: #e5e8ec; --muted: #98a0ab;
+    --accent: #7aa2f7; --ok: #6fd39a; --ok-bg: #16301f; --bad: #f08a80; --bad-bg: #3a1a17;
+    --warn: #f0c46a; --warn-bg: #352a10; --run: #b99cf2; --run-bg: #261c3d;
+    --con-bg: #0a0c0f; --con-line: #20252c; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  button, input, textarea { font: inherit; color: inherit; }
+  button { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 3px 9px; cursor: pointer; }
+  button:hover:not(:disabled) { border-color: var(--accent); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .mono { font-family: var(--mono); font-size: 12px; }
+  .muted { color: var(--muted); }
+
+  .page { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 520px); gap: 16px; padding-block: 16px;
+          padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  @media (max-width: 980px) { .page { grid-template-columns: minmax(0, 1fr); } }
+  header.top { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  header.top h1 { font-size: 18px; margin: 0; }
+  header.top .spacer { flex: 1; }
+  .app { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; min-width: 0; }
+  .panel h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
+  .env + .env { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 12px; }
+  .grid2 { align-items: start; }
+  .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .row .grow { flex: 1; min-width: 0; }
+  .name { font-weight: 650; font-size: 14px; }
+  .head { margin: 6px 0 8px; padding: 6px 8px; background: var(--bg); border-radius: 6px; overflow-wrap: anywhere; }
+  table { width: 100%; border-collapse: collapse; }
+  td, th { text-align: left; padding: 4px 6px; border-top: 1px solid var(--line); vertical-align: middle; }
+  th { color: var(--muted); font-weight: 500; font-size: 12px; border-top: none; }
+  td.msg { overflow-wrap: break-word; min-width: 140px; }
+  td.acts { white-space: nowrap; width: 1%; }
+  td.acts button + button { margin-left: 4px; }
+  button.sm { padding: 1px 7px; font-size: 12px; }
+  .chip { display: inline-block; border-radius: 99px; padding: 0 8px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .chip.passed { background: var(--ok-bg); color: var(--ok); }
+  .chip.failed { background: var(--bad-bg); color: var(--bad); }
+  .chip.cancelled { background: var(--bg); color: var(--muted); }
+  .chip.running { background: var(--run-bg); color: var(--run); }
+  .bar { height: 4px; background: var(--run-bg); border-radius: 2px; overflow: hidden; margin-top: 3px; min-width: 60px; }
+  .bar > div { height: 100%; background: var(--run); transition: width .3s; }
+  .flag { display: inline-flex; align-items: center; gap: 6px; margin: 2px 12px 2px 0; }
+  .alerts { display: flex; flex-direction: column; gap: 8px; }
+  .alert { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 10px 12px; border-radius: 10px; background: var(--warn-bg); color: var(--warn); border: 1px solid currentColor; }
+  .alert .grow { flex: 1; min-width: 200px; }
+  .alert button { color: var(--text); }
+  .scroll { overflow-x: auto; }
+
+  /* console */
+  .console { background: var(--con-bg); color: var(--con-text); border-radius: 10px; display: flex; flex-direction: column; min-width: 0;
+             position: sticky; top: 16px; height: calc(100vh - 32px); min-height: 480px; }
+  @media (max-width: 980px) { .console { position: static; height: 640px; } }
+  .con-head { padding: 10px 12px; border-bottom: 1px solid var(--con-line); display: flex; flex-direction: column; gap: 6px; }
+  .con-head h2 { margin: 0; font-size: 13px; }
+  .con-head .stats { color: var(--con-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .con-head button, .con-foot button { background: transparent; color: var(--con-text); border-color: var(--con-line); }
+  .con-head button.primary, .con-foot button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .con-log { flex: 1; overflow-y: auto; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; }
+  .entry { border-left: 3px solid var(--con-line); padding: 2px 0 2px 8px; }
+  .entry .meta { font-size: 11px; color: var(--con-muted); display: flex; gap: 8px; }
+  .entry .kind { font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+  .entry pre { margin: 2px 0 0; font-family: var(--mono); font-size: 11.5px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .entry.out { border-color: var(--con-out); } .entry.out .kind { color: var(--con-out); }
+  .entry.in { border-color: var(--con-in); } .entry.in .kind { color: var(--con-in); }
+  .entry.event { border-color: var(--con-event); } .entry.event .kind { color: var(--con-event); }
+  .entry.note { border-color: var(--con-note); color: var(--con-note); font-style: italic; }
+  .con-foot { border-top: 1px solid var(--con-line); padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+  .con-foot textarea { width: 100%; min-height: 64px; resize: vertical; background: #00000033; color: var(--con-text); border: 1px solid var(--con-line); border-radius: 6px; padding: 6px 8px; font-family: var(--mono); font-size: 12px; }
+  .con-foot .hint { color: var(--con-muted); font-size: 11px; }
+  label.check { display: inline-flex; gap: 4px; align-items: center; color: var(--con-muted); font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="app">
+    <header class="top">
+      <h1>Release Desk</h1>
+      <span class="muted">Builds and deploys for the shop. This page is one client of the app's protocol; the console on the right shows another, the agent.</span>
+      <span class="spacer"></span>
+      <button id="outage" title="Simulate the build runner going offline for 10 seconds">Simulate CI outage</button>
+    </header>
+    <div class="alerts" id="alerts" aria-live="polite"></div>
+    <section class="panel"><h2>Services</h2><div id="services" class="grid2"></div></section>
+    <div class="grid2">
+      <section class="panel"><h2>Environments</h2><div id="envs"></div></section>
+      <section class="panel"><h2>Deploys</h2><div class="scroll"><table id="deploys"></table></div></section>
+    </div>
+  </div>
+
+  <aside class="console" aria-label="Agent console">
+    <div class="con-head">
+      <div class="row"><h2 class="grow">Agent console</h2><span class="stats" id="stats"></span></div>
+      <div class="row">
+        <button class="primary" id="sample">Run sample task</button>
+        <button id="q-observe">observe /</button>
+        <button id="q-listen">listen /</button>
+        <span class="grow"></span>
+        <label class="check"><input type="checkbox" id="indent"> Indent</label>
+        <button id="clear">Clear</button>
+      </div>
+    </div>
+    <div class="con-log" id="log" aria-live="polite"></div>
+    <div class="con-foot">
+      <textarea id="input" spellcheck="false" aria-label="Call to send as the agent">{"action": "observe", "path": "/services/storefront"}</textarea>
+      <div class="row"><span class="hint grow">Send any call as the agent. Ctrl+Enter sends.</span><button class="primary" id="send">Send</button></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+// =====================================================================
+// Protocol engine: the tree, queries, submissions, busy, pings, alerts.
+// Nothing in here knows about builds or deploys.
+// =====================================================================
+const RESERVED = new Set(["app", "api", "*", "folded", "overflow", "busy", "alerts"]);
+const NEVER_FOLD = new Set(["app", "api", "overflow", "busy", "alerts"]);
+const BUDGET = 2048, MAX_CHILDREN = 100, LIST_CAP = 100;
+const utf8 = new TextEncoder();
+const size = x => utf8.encode(JSON.stringify(x)).length;
+const parts = p => p.split("/").filter(Boolean);
+const join = (p, k) => (p === "/" ? "" : p) + "/" + k;
+const clone = x => x === undefined ? undefined : JSON.parse(JSON.stringify(x));
+const isObj = x => x !== null && typeof x === "object" && !Array.isArray(x);
+const dataKeys = n => Object.keys(n).filter(k => !RESERVED.has(k));
+const under = (p, root) => root === "/" || p === root || p.startsWith(root + "/");
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function getAt(tree, path) { let n = tree; for (const k of parts(path)) { if (!isObj(n) || !(k in n)) return undefined; n = n[k]; } return n; }
+function setAt(tree, path, v) { const ps = parts(path), last = ps.pop(); let n = tree; for (const k of ps) n = n[k]; n[last] = v; }
+function delAt(tree, path) { const ps = parts(path), last = ps.pop(); let n = tree; for (const k of ps) n = n?.[k]; if (isObj(n)) delete n[last]; }
+function capped(o, key, list) { if (list.length) { o[key] = list.slice(0, LIST_CAP); if (list.length > LIST_CAP) o[key + "_total"] = list.length; } return o; }
+
+class Engine {
+  constructor(tree, domain) {
+    this.tree = tree; this.domain = domain; this.version = 1; this.log = [];
+    this.busy = new Map();      // path -> { by, progress, cancellable }
+    this.alerts = [];           // { by, message, answer_by, deadline }
+    this.subs = new Map();      // submission id -> { id, client, busy, alert, waiter, cancelRequested }
+    this.clients = []; this.seq = 0;
+  }
+  client(name, deliver, opts = {}) { const c = { name, deliver, views: {}, listens: [], person: !!opts.person }; this.clients.push(c); return c; }
+  nextId() { return "s" + (++this.seq); }
+
+  // ----- reading -----
+  templateAt(path) {
+    let t = this.tree;
+    for (const k of parts(path)) { if (!isObj(t)) return {}; t = "*" in t ? t["*"] : (t[k] ?? {}); }
+    return isObj(t) ? t : {};
+  }
+  templatePath(path) {
+    const out = []; let t = this.tree;
+    for (const k of parts(path)) { const id = isObj(t) && "*" in t; out.push(id ? "*" : k); t = id ? t["*"] : (isObj(t) ? t[k] : undefined); }
+    return "/" + out.join("/");
+  }
+  apiOf(path) { const n = getAt(this.tree, path); return (isObj(n) && n.api) || this.templateAt(path).api || []; }
+
+  marker(bp, m) {
+    const b = { by: m.by };
+    if (m.progress) b.progress = { ...m.progress };
+    if (m.cancellable) b.cancel = { action: "cancel", path: "/", submission: m.by };
+    const last = getAt(this.tree, bp);
+    if (last !== undefined) b.last = clone(last);
+    return { busy: b };
+  }
+  render(path) {
+    if (this.busy.has(path) && path !== "/") return this.marker(path, this.busy.get(path));
+    let node = clone(getAt(this.tree, path));
+    if (node === undefined) return undefined;
+    for (const [bp, m] of this.busy) {
+      if (bp === "/" || bp === path || !under(bp, path)) continue;
+      const rel = parts(path === "/" ? bp : bp.slice(path.length)), last = rel.pop();
+      let n = node, ok = true;
+      for (const k of rel) { if (!isObj(n[k])) { ok = false; break; } n = n[k]; }
+      if (ok && isObj(n)) n[last] = this.marker(bp, m);
+    }
+    if (path === "/") {
+      if (this.busy.size) node.busy = [...this.busy.keys()];
+      if (this.alerts.length) node.alerts = this.alerts.map(a => this.alertView(a));
+    }
+    return node;
+  }
+  alertView(a) {
+    if (a.by === "app") return { by: "app", message: a.message };
+    return { by: a.by, message: a.message, answer_by: a.answer_by, expires_in: Math.max(0, Math.round((a.deadline - Date.now()) / 1000)),
+             confirm: { action: "confirm", path: "/", submission: a.by }, cancel: { action: "cancel", path: "/", submission: a.by } };
+  }
+
+  // overflow: a collection never shows more than MAX_CHILDREN children
+  window(node, keys, next) {
+    const out = {};
+    for (const k of Object.keys(node)) if (RESERVED.has(k) && k !== "overflow") out[k] = node[k];
+    const shown = keys.slice(0, MAX_CHILDREN);
+    for (const k of shown) out[k] = node[k];
+    if (keys.length > shown.length) out.overflow = { shown: shown.length, total: keys.length, next: { ...next, after: shown[shown.length - 1] } };
+    return out;
+  }
+  windowAll(node, path, tmpl) {
+    if (!isObj(node) || isObj(node.busy)) return node;
+    tmpl = tmpl ?? this.templateAt(path);
+    const keys = dataKeys(node);
+    if ("*" in tmpl && keys.length > MAX_CHILDREN) node = this.window(node, keys, { action: "page", path });
+    for (const k of dataKeys(node)) {
+      const ct = "*" in tmpl ? tmpl["*"] : tmpl[k];
+      node[k] = this.windowAll(node[k], join(path, k), isObj(ct) ? ct : {});
+    }
+    return node;
+  }
+
+  // folding: views first, then the smallest node that alone brings the answer under budget
+  fold(node, path, views) {
+    const label = n => `${isObj(n) ? dataKeys(n).length + " children" : n.length + " items"}`;
+    const countBusy = n => isObj(n) ? (isObj(n.busy) ? 1 : Object.entries(n).reduce((a, [k, v]) => a + (k === "*" ? 0 : countBusy(v)), 0)) : 0;
+    const applyFolds = (n, p) => {
+      if (!isObj(n)) return;
+      for (const [k, v] of Object.entries(n)) {
+        if (NEVER_FOLD.has(k) || !(isObj(v) || Array.isArray(v))) continue;
+        const cp = join(p, k);
+        if (views[cp] === "fold") n[k] = { folded: label(v) }; else applyFolds(v, cp);
+      }
+    };
+    applyFolds(node, path);
+    const expanded = Object.keys(views).filter(p => views[p] === "expand");
+    if (expanded.some(e => under(path, e))) return node;
+    const isProtected = p => expanded.some(e => under(p, e) || under(e, p));
+    const foldable = function* (n, p) {
+      if (!isObj(n)) return;
+      for (const [k, v] of Object.entries(n)) {
+        if (NEVER_FOLD.has(k) || !(isObj(v) || Array.isArray(v)) || (isObj(v) && "folded" in v)) continue;
+        const cp = join(p, k); yield [cp, n, k, v]; yield* foldable(v, cp);
+      }
+    };
+    while (isObj(node) && size(node) > BUDGET) {
+      const need = size(node) - BUDGET, cands = [];
+      for (const [p, parent, k, v] of foldable(node, path)) {
+        if (isProtected(p)) continue;
+        const b = countBusy(v), api = (isObj(v) && v.api) || this.templateAt(p).api;
+        const stub = api ? { api } : {};
+        stub.folded = `${label(v)}${b ? `, ${b} busy` : ""}, ${(size(v) / 1024).toFixed(1)} KB`;
+        const saving = size(v) - size(stub);
+        if (saving > 0) cands.push({ s: size(v), saving, parent, k, stub });
+      }
+      if (!cands.length) break;
+      const enough = cands.filter(c => c.saving >= need);
+      const pick = enough.length ? enough.reduce((a, c) => c.s < a.s ? c : a) : cands.reduce((a, c) => c.s > a.s ? c : a);
+      pick.parent[pick.k] = pick.stub;
+    }
+    return node;
+  }
+
+  // ----- calls -----
+  async call(msg, client) {
+    if (!isObj(msg) || typeof msg.action !== "string" || typeof msg.path !== "string" || !msg.path.startsWith("/"))
+      return { error: "bad_args", message: 'A call is an object with "action" and "path" (starting with /).' };
+    switch (msg.action) {
+      case "observe": return this.observe(msg, client);
+      case "view": return this.view(msg, client);
+      case "listen": client.listens.push(msg.path); return { listening: true };
+      case "page": return this.page(msg, client);
+      case "find": return this.find(msg, client);
+      case "confirm": case "cancel": return this.answer(msg, client);
+      default: return this.submit(msg, client);
+    }
+  }
+  observe(msg, client) {
+    if (msg.since != null) return this.since(msg);
+    const node = this.render(msg.path);
+    if (node === undefined) return { error: "not_found", message: `Nothing at ${msg.path}.` };
+    return { version: this.version, node: this.fold(this.windowAll(node, msg.path), msg.path, client.views) };
+  }
+  since(msg) {
+    const path = msg.path, recent = this.log.filter(e => e.version > msg.since && under(e.path, path));
+    const written = [...new Set(recent.filter(e => e.op !== "remove" && getAt(this.tree, e.path) !== undefined).map(e => e.path))].sort((a, b) => a.length - b.length);
+    const removed = [...new Set(recent.filter(e => e.op === "remove" && getAt(this.tree, e.path) === undefined).map(e => e.path))].sort();
+    const node = {}, taken = [];
+    for (const p of written) {
+      if (taken.some(t => under(p, t))) continue;
+      taken.push(p);
+      const rel = parts(path === "/" ? p : p.slice(path.length)); let cur = node;
+      for (const k of rel.slice(0, -1)) cur = cur[k] ??= {};
+      cur[rel[rel.length - 1]] = clone(getAt(this.tree, p));
+    }
+    return capped({ version: this.version, node: this.fold(node, path, {}) }, "removed", removed);
+  }
+  view(msg, client) {
+    if (!["fold", "expand", "auto"].includes(msg.view)) return { error: "bad_args", message: 'view is "fold", "expand" or "auto".' };
+    if (msg.view === "auto") delete client.views[msg.path]; else client.views[msg.path] = msg.view;
+    return { view: msg.view };
+  }
+  page(msg, client) {
+    const node = this.render(msg.path);
+    if (node === undefined) return { error: "not_found", message: `Nothing at ${msg.path}.` };
+    if (!("*" in this.templateAt(msg.path))) return { error: "unknown_action", message: `${msg.path} is not a collection.` };
+    const keys = dataKeys(node), i = keys.indexOf(msg.after);
+    return { version: this.version, node: this.fold(this.window(node, i < 0 ? keys : keys.slice(i + 1), { action: "page", path: msg.path }), msg.path, client.views) };
+  }
+  find(msg, client) {
+    const node = this.render(msg.path);
+    if (node === undefined) return { error: "not_found", message: `Nothing at ${msg.path}.` };
+    if (!this.apiOf(msg.path).includes("find")) return { error: "unknown_action", message: `${msg.path} has no find.` };
+    const where = isObj(msg.where) ? msg.where : {}, text = typeof msg.text === "string" ? msg.text.toLowerCase() : "";
+    let keys = dataKeys(node).filter(k => {
+      const v = node[k];
+      if (!isObj(v) || isObj(v.busy)) return false;
+      for (const [f, want] of Object.entries(where)) {
+        const have = v[f];
+        if (Array.isArray(have) && !Array.isArray(want) ? !have.includes(want) : have !== want) return false;
+      }
+      return !text || Object.values(v).some(x => typeof x === "string" && x.toLowerCase().includes(text));
+    });
+    const i = keys.indexOf(msg.after); if (i >= 0) keys = keys.slice(i + 1);
+    const call = { action: "find", path: msg.path }; if (msg.where) call.where = msg.where; if (msg.text) call.text = msg.text;
+    return { version: this.version, node: this.fold(this.window(node, keys, call), msg.path, client.views) };
+  }
+
+  // ----- submissions -----
+  refuse(id, error, message) { return { receipt: id, feedback: { error, message }, ping: { version: this.version } }; }
+  blockedBy(paths) {
+    for (const [bp, m] of this.busy) for (const p of paths) if (bp === "/" || under(p, bp) || under(bp, p)) return [bp, m.by];
+    return null;
+  }
+  async submit(msg, client) {
+    const id = this.nextId(), path = msg.path;
+    if (this.busy.has("/")) return this.refuse(id, "busy", `The whole app is busy (${this.alerts.find(a => a.by === "app")?.message ?? "app-wide alert"}). Listen for its ping, then try again.`);
+    if (getAt(this.tree, path) === undefined) return this.refuse(id, this.busy.has(path) ? "busy" : "not_found", this.busy.has(path) ? `${path} is busy until ${this.busy.get(path).by} settles.` : `Nothing at ${path}.`);
+    const api = this.apiOf(path);
+    if (!api.includes(msg.action)) return this.refuse(id, "unknown_action", `${path} has no action "${msg.action}". It offers: ${api.join(", ") || "nothing"}.`);
+    if (msg.version != null && msg.version !== this.version) return this.refuse(id, "stale", `The app is at version ${this.version}, not ${msg.version}. Observe again before acting.`);
+    const own = [...this.busy].find(([bp]) => under(path, bp));   // the node itself or something above it
+    if (own) return this.refuse(id, "busy", `${own[0]} is busy until ${own[1].by} settles. Listen for its ping, then try again.`);
+    const handler = this.domain.actions[this.templatePath(path) + ":" + msg.action];
+    if (!handler) return this.refuse(id, "unknown_action", `No handler for ${msg.action}.`);
+    const r = handler(msg, { path, client: client.name, engine: this });
+    return this.run(id, client, msg, r);
+  }
+  run(id, client, msg, r) {
+    if (r.error) return this.refuse(id, r.error, r.message);
+    if (r.changes) {
+      const body = this.apply(r.changes);
+      this.deliver({ ping: id, ...body }, [...(body.changed ?? []), ...(body.removed ?? [])], client);
+      return { receipt: id, ping: body };
+    }
+    const clash = this.blockedBy(r.busy);
+    if (clash) return this.refuse(id, "busy", `${clash[0]} is busy until ${clash[1]} settles. Listen for its ping, then try again.`);
+    const sub = { id, client: client.name, busy: r.busy, waiter: null, cancelRequested: false };
+    this.subs.set(id, sub);
+    for (const p of r.busy) this.busy.set(p, { by: id, progress: null, cancellable: !!r.cancellable });
+    const receipt = capped({ receipt: id }, "busy", r.busy);
+    if (r.alert) {
+      const a = { by: id, message: r.alert.message, answer_by: r.alert.answer_by ?? "caller", deadline: Date.now() + (r.alert.expires_in ?? 300) * 1000, then: r.then };
+      this.alerts.push(a); receipt.alert = this.alertView(a);
+      a.timer = setTimeout(() => { if (this.alerts.includes(a)) { this.alerts = this.alerts.filter(x => x !== a); this.settle(sub, [], { message: "Nobody answered in time, so it was cancelled." }); } }, a.deadline - Date.now());
+      this.deliver(capped({ busy: id, alert: this.alertView(a) }, "paths", r.busy), r.busy, client);
+      return receipt;
+    }
+    this.deliver(capped({ busy: id }, "paths", r.busy), r.busy, client);
+    this.work(sub, r);
+    if (msg.wait) return new Promise(res => { sub.waiter = res; });
+    return receipt;
+  }
+  work(sub, r) {
+    const ctl = {
+      progress: (done, total, message) => { for (const p of sub.busy) { const m = this.busy.get(p); if (m) m.progress = { done, total, message }; } },
+      get cancelled() { return sub.cancelRequested; },
+    };
+    Promise.resolve(r.work(ctl)).then(changes => this.settle(sub, changes ?? []));
+  }
+  settle(sub, changes, feedback) {
+    for (const p of sub.busy) if (this.busy.get(p)?.by === sub.id) this.busy.delete(p);
+    this.alerts = this.alerts.filter(a => a.by !== sub.id);
+    this.subs.delete(sub.id);
+    const body = this.apply(changes);
+    if (feedback) body.feedback = feedback;
+    const paths = [...sub.busy, ...(body.changed ?? []), ...(body.removed ?? [])];
+    const caller = this.clients.find(c => c.name === sub.client);
+    if (sub.waiter) sub.waiter({ receipt: sub.id, ping: body }); else caller?.deliver({ ping: sub.id, ...body });
+    this.deliver({ ping: sub.id, ...body }, paths, caller);
+  }
+  apply(changes) {
+    if (!changes.length) return { version: this.version };
+    this.version++;
+    const changed = [], removed = [];
+    for (const c of changes) {
+      if (c.op === "remove") { delAt(this.tree, c.path); removed.push(c.path); } else { setAt(this.tree, c.path, clone(c.value)); changed.push(c.path); }
+      this.log.push({ version: this.version, op: c.op, path: c.path });
+    }
+    return capped(capped({ version: this.version }, "changed", changed), "removed", removed);
+  }
+  deliver(msg, paths, except) {
+    for (const c of this.clients) if (c !== except && c.listens.some(L => paths.some(p => under(p, L)))) c.deliver(msg);
+  }
+  async answer(msg, client) {
+    const id = this.nextId(), target = msg.submission;
+    const a = this.alerts.find(x => x.by === target && x.by !== "app"), sub = this.subs.get(target);
+    if (!sub || (!a && msg.action === "confirm") || (!a && !this.busy.get(sub.busy[0])?.cancellable))
+      return this.refuse(id, "not_found", `No open alert${msg.action === "cancel" ? " or cancellable work" : ""} for ${target}.`);
+    const mayAnswer = a ? (a.answer_by === "person" ? client.person : client.name === sub.client) : (client.name === sub.client || client.person);
+    if (!mayAnswer) return this.refuse(id, "not_yours", a?.answer_by === "person" ? "Only a person can answer this, in the app. Tell them it's waiting." : `Only the caller of ${target} can answer this.`);
+    if (a) { clearTimeout(a.timer); this.alerts = this.alerts.filter(x => x !== a); }
+    if (msg.action === "cancel") {
+      if (a) this.settle(sub, []); else sub.cancelRequested = true;
+    } else {
+      const r2 = a.then(client.name);
+      if (r2.error) this.settle(sub, [], { error: r2.error, message: r2.message });
+      else if (r2.changes) this.settle(sub, r2.changes);
+      else { if (r2.cancellable) for (const p of sub.busy) this.busy.get(p).cancellable = true; this.work(sub, r2); }
+    }
+    return { receipt: id, ping: { version: this.version } };
+  }
+
+  // things that happen to the app from outside: a git push, an outage
+  external(changes) {
+    const id = this.nextId(), body = this.apply(changes);
+    this.deliver({ ping: id, ...body }, [...(body.changed ?? []), ...(body.removed ?? [])], null);
+  }
+  appAlert(message, ms) {
+    const a = { by: "app", message }; this.alerts.push(a); this.busy.set("/", { by: "app" });
+    this.deliver({ busy: "app", paths: ["/"], alert: { by: "app", message } }, ["/"], null);
+    setTimeout(() => {
+      this.alerts = this.alerts.filter(x => x !== a); this.busy.delete("/");
+      this.deliver({ ping: "app", version: this.version }, ["/"], null);
+    }, ms);
+  }
+}
+
+// =====================================================================
+// The release desk itself: its tree and its actions.
+// =====================================================================
+const hhmm = () => new Date().toTimeString().slice(0, 5);
+const tree = {
+  app: "Release Desk",
+  services: {
+    "*": { api: ["build"], builds: { api: ["find"], "*": { api: ["deploy"] } } },
+    storefront: {
+      repo: "shop/storefront",
+      head: { commit: "a41c9e2", message: "Show delivery estimate on cart page", author: "priya" },
+      builds: {
+        b1: { commit: "5d0e113", message: "Fix currency rounding in cart", author: "sam", status: "passed", duration_s: 182 },
+        b2: { commit: "8c2f7aa", message: "Add gift message field", author: "priya", status: "passed", duration_s: 176 },
+        b3: { commit: "0b9e6d4", message: "Update footer links", author: "sam", status: "passed", duration_s: 171 },
+      },
+    },
+    payments: {
+      repo: "shop/payments",
+      head: { commit: "3fd88b1", message: "Add idempotency keys to charges", author: "lena" },
+      builds: {
+        b4: { commit: "2e7c901", message: "Upgrade card SDK", author: "lena", status: "passed", duration_s: 240 },
+        b5: { commit: "3fd88b1", message: "Add idempotency keys to charges", author: "lena", status: "passed", duration_s: 251 },
+      },
+    },
+  },
+  environments: {
+    "*": { flags: { "*": { api: ["set"] } } },
+    staging: { url: "https://staging.shop.example", running: { storefront: "b3", payments: "b5" },
+               flags: { new_checkout: { on: true }, express_pay: { on: true } } },
+    production: { url: "https://shop.example", running: { storefront: "b2", payments: "b4" },
+                  flags: { new_checkout: { on: false }, express_pay: { on: false } } },
+  },
+  deploys: {
+    api: ["find"], "*": {},
+    d1: { service: "storefront", build: "b2", env: "production", at: "09:12", by: "priya" },
+    d2: { service: "payments", build: "b4", env: "production", at: "09:40", by: "lena" },
+    d3: { service: "storefront", build: "b3", env: "staging", at: "10:05", by: "sam" },
+    d4: { service: "payments", build: "b5", env: "staging", at: "10:31", by: "lena" },
+  },
+};
+// what a build of each commit will find; the app only learns this by building
+const FAILS = { "e19f4a0": "search.spec: suggestions appear after two letters", "7aa0c3e": "refunds.test: partial refund rounding" };
+const UPCOMING = {
+  storefront: [{ commit: "c7d21b8", message: "Lazy-load product images", author: "sam" },
+               { commit: "e19f4a0", message: "WIP: new search box", author: "sam" },
+               { commit: "f40a6c3", message: "New search box with suggestions", author: "sam" }],
+  payments: [{ commit: "7aa0c3e", message: "Retry declined cards once", author: "lena" },
+             { commit: "91be5d2", message: "Fix partial refund rounding", author: "lena" }],
+};
+let buildSeq = 5, deploySeq = 4;
+const STEPS = ["Checking out", "Installing", "Running tests", "Packaging"];
+
+const domain = {
+  actions: {
+    "/services/*:build": (msg, { path }) => {
+      const svc = parts(path)[1], head = { ...tree.services[svc].head }, id = "b" + (++buildSeq), bpath = `${path}/builds/${id}`;
+      return {
+        busy: [bpath], cancellable: true,
+        work: async ctl => {
+          const started = Date.now();
+          const done = status => [{ op: "add", path: bpath, value: { ...head, status, duration_s: Math.round((Date.now() - started) / 100) / 10, ...(status === "failed" ? { failed_test: FAILS[head.commit] } : {}) } }];
+          for (let i = 0; i < STEPS.length; i++) {
+            ctl.progress(i, STEPS.length, `${STEPS[i]} ${head.commit}`);
+            await sleep(1300);
+            if (ctl.cancelled) return done("cancelled");
+            if (i === 2 && FAILS[head.commit]) return done("failed");
+          }
+          return done("passed");
+        },
+      };
+    },
+    "/services/*/builds/*:deploy": (msg, { path, client }) => {
+      const [, svc, , bid] = parts(path), env = msg.env, build = getAt(tree, path);
+      if (!["staging", "production"].includes(env)) return { error: "bad_args", message: 'env is "staging" or "production".' };
+      if (build.status !== "passed") return { error: "build_failed", message: `${bid} ${build.status === "failed" ? `failed (${build.failed_test})` : "was cancelled"}. Only builds that passed can be deployed.` };
+      if (tree.environments[env].running[svc] === bid) return { error: "already_running", message: `${env} already runs ${bid}.` };
+      if (env === "production" && !Object.values(tree.deploys).some(d => isObj(d) && d.build === bid && d.env === "staging"))
+        return { error: "not_on_staging", message: `Deploy ${bid} to staging first. Production only takes builds that have run on staging.` };
+      const target = `/environments/${env}/running/${svc}`;
+      const rollout = by => async ctl => {
+        for (let i = 0; i < 4; i++) { ctl.progress(i, 4, `Rolling out ${bid}: ${i} of 4 servers`); await sleep(900); }
+        const did = "d" + (++deploySeq);
+        return [{ op: "set", path: target, value: bid },
+                { op: "add", path: `/deploys/${did}`, value: { service: svc, build: bid, env, at: hhmm(), by } }];
+      };
+      if (env === "staging") return { busy: [target], work: rollout(client) };
+      const was = tree.environments.production.running[svc];
+      return {
+        busy: [target],
+        alert: { message: `Deploy ${svc} ${bid} (${build.commit} "${build.message}") to production, replacing ${was}?`, answer_by: "person", expires_in: 180 },
+        then: approver => ({ work: rollout(approver === client ? client : `${client}, approved by ${approver}`) }),
+      };
+    },
+    "/environments/*/flags/*:set": (msg, { path }) => {
+      if (typeof msg.on !== "boolean") return { error: "bad_args", message: '"on" must be true or false.' };
+      return { changes: [{ op: "set", path: path + "/on", value: msg.on }] };
+    },
+  },
+};
+const engine = new Engine(tree, domain);
+
+// =====================================================================
+// The UI: a client of the protocol like any other. It observes, listens
+// and submits; it keeps no state of its own.
+// =====================================================================
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const ui = engine.client("person", () => schedule(), { person: true });
+ui.views["/"] = "expand";
+ui.listens.push("/");
+let pending = false;
+function schedule() { if (!pending) { pending = true; requestAnimationFrame(() => { pending = false; draw(); }); } }
+setInterval(() => { if (engine.busy.size || engine.alerts.length) draw(); }, 400);   // progress and countdowns aren't pinged
+const uiCall = async msg => { const r = await engine.call(msg, ui); if (r.feedback?.error) alertBox(r.feedback.message); schedule(); return r; };
+let uiNote = "";
+function alertBox(text) { uiNote = text; schedule(); setTimeout(() => { if (uiNote === text) { uiNote = ""; schedule(); } }, 5000); }
+
+function chip(status, progress) {
+  if (status === "running") return `<span class="chip running">${progress ? `${esc(progress.message)}` : "starting"}</span>${progress ? `<div class="bar"><div style="width:${100 * progress.done / progress.total}%"></div></div>` : ""}`;
+  return `<span class="chip ${status}">${status}</span>`;
+}
+function draw() {
+  const root = engine.observe({ path: "/" }, ui).node;
+  // alerts
+  let al = "";
+  if (uiNote) al += `<div class="alert" role="status"><span class="grow">${esc(uiNote)}</span></div>`;
+  for (const a of root.alerts ?? []) {
+    const mine = a.by !== "app" && (a.answer_by === "person" || engine.subs.get(a.by)?.client === "person");
+    al += `<div class="alert" role="alert"><span class="grow"><b>${a.by === "app" ? "App" : "Needs approval"}:</b> ${esc(a.message)}${a.expires_in != null ? ` <span class="mono">(${a.expires_in}s left)</span>` : ""}</span>
+      ${mine ? `<button class="primary" data-answer="confirm" data-sub="${a.by}">Approve</button><button data-answer="cancel" data-sub="${a.by}">Reject</button>` : a.by === "app" ? "" : `<span>Waiting for the agent.</span>`}</div>`;
+  }
+  $("alerts").innerHTML = al;
+  const appBusy = (root.busy ?? []).includes("/");
+  $("outage").disabled = appBusy;
+
+  // services
+  let sv = "";
+  for (const name of dataKeys(root.services)) {
+    const s = root.services[name], b = s.builds;
+    const rows = dataKeys(b).reverse().map(id => {
+      const x = b[id], running = isObj(x.busy);
+      const st = running ? chip("running", x.busy.progress) : chip(x.status);
+      const v = running ? {} : x;
+      const msg = running ? "" : `${esc(v.message)} <span class="muted mono">${esc(v.commit)}</span>${v.failed_test ? `<div class="mono" style="color:var(--bad)">${esc(v.failed_test)}</div>` : ""}`;
+      return `<tr><td class="mono">${id}</td><td class="msg">${msg}${running ? st : ` ${st}`}</td>
+        <td class="acts">${running ? (x.busy.cancel ? `<button class="sm" data-cancel="${x.busy.by}">Cancel</button>` : "")
+          : v.status === "passed" ? `<button class="sm" data-deploy="/services/${name}/builds/${id}" data-env="staging" title="Deploy to staging">→ staging</button><button class="sm" data-deploy="/services/${name}/builds/${id}" data-env="production" title="Deploy to production">→ prod</button>` : ""}</td></tr>`;
+    }).join("");
+    sv += `<div class="svc"><div class="row"><span class="name grow">${name}</span><span class="muted mono">${esc(s.repo)}</span></div>
+      <div class="head"><span class="muted">Latest commit</span> <span class="mono">${esc(s.head.commit)}</span> ${esc(s.head.message)} <span class="muted">by ${esc(s.head.author)}</span></div>
+      <div class="row" style="margin-bottom:6px"><button class="primary" data-build="/services/${name}" ${appBusy ? "disabled" : ""}>Build latest</button>
+      <button data-push="${name}" ${UPCOMING[name].length ? "" : "disabled"} title="Pretend a developer pushed a new commit">Push a commit</button></div>
+      <div class="scroll"><table><tr><th>Build</th><th>Commit</th><th>Deploy</th></tr>${rows}</table></div></div>`;
+  }
+  $("services").innerHTML = sv;
+
+  // environments
+  let ev = "";
+  for (const env of dataKeys(root.environments)) {
+    const e = root.environments[env];
+    const run = dataKeys(e.running).map(svc => {
+      const r = e.running[svc];
+      return `<tr><td>${svc}</td><td class="mono">${isObj(r) ? `${esc(r.busy.last)} → …` : esc(r)}</td><td>${isObj(r) ? chip("running", r.busy.progress) : ""}</td></tr>`;
+    }).join("");
+    const flags = dataKeys(e.flags).map(f => `<label class="flag"><input type="checkbox" data-flag="/environments/${env}/flags/${f}" ${e.flags[f].on ? "checked" : ""}> <span class="mono">${f}</span></label>`).join("");
+    ev += `<div class="env"><div class="row"><span class="name grow">${env}</span><span class="muted mono">${esc(e.url)}</span></div>
+      <table><tr><th>Service</th><th>Running</th><th></th></tr>${run}</table><div style="margin-top:6px">${flags}</div></div>`;
+  }
+  $("envs").innerHTML = ev;
+
+  // deploys
+  const d = root.deploys;
+  $("deploys").innerHTML = `<tr><th>Id</th><th>Time</th><th>Environment</th><th>Service</th><th>Build</th><th>By</th></tr>` +
+    dataKeys(d).reverse().map(id => `<tr><td class="mono">${id}</td><td class="mono">${esc(d[id].at)}</td><td>${esc(d[id].env)}</td><td>${esc(d[id].service)}</td><td class="mono">${esc(d[id].build)}</td><td>${esc(d[id].by)}</td></tr>`).join("");
+}
+document.addEventListener("click", e => {
+  const t = e.target.closest("button"); if (!t) return;
+  if (t.dataset.build) uiCall({ action: "build", path: t.dataset.build });
+  if (t.dataset.deploy) uiCall({ action: "deploy", path: t.dataset.deploy, env: t.dataset.env });
+  if (t.dataset.cancel) uiCall({ action: "cancel", path: "/", submission: t.dataset.cancel });
+  if (t.dataset.answer) uiCall({ action: t.dataset.answer, path: "/", submission: t.dataset.sub });
+  if (t.dataset.push) { const c = UPCOMING[t.dataset.push].shift(); if (c) engine.external([{ op: "set", path: `/services/${t.dataset.push}/head`, value: c }]); }
+});
+document.addEventListener("change", e => {
+  const t = e.target; if (t.dataset.flag) uiCall({ action: "set", path: t.dataset.flag, on: t.checked });
+});
+$("outage").onclick = () => engine.appAlert("The build runner is offline. Builds and deploys are paused for a few seconds.", 10000);
+
+// =====================================================================
+// The agent console: every message the agent sends and receives.
+// =====================================================================
+const pings = new Map(), pingWaiters = new Map();
+let total = 0, count = 0;
+const agent = engine.client("agent", msg => { logEntry("in-event", msg); if (msg.ping) { pings.set(msg.ping, msg); pingWaiters.get(msg.ping)?.(msg); } });
+function kindOf(m) { return m.receipt ? "receipt" : m.ping ? "ping" : m.busy && typeof m.busy === "string" ? "busy" : m.error ? "error" : "answer"; }
+function logEntry(dir, m) {
+  const text = $("indent").checked ? JSON.stringify(m, null, 2) : JSON.stringify(m), bytes = utf8.encode(JSON.stringify(m)).length;
+  total += bytes; count++;
+  const div = document.createElement("div");
+  const cls = dir === "out" ? "out" : dir === "in-event" ? "event" : "in";
+  const label = dir === "out" ? "→ call" : (dir === "in-event" ? "← " : "← ") + kindOf(m);
+  div.className = "entry " + cls; div.dataset.json = JSON.stringify(m);
+  div.innerHTML = `<div class="meta"><span class="kind">${label}</span><span>${new Date().toLocaleTimeString()}</span><span>${bytes} B</span></div><pre></pre>`;
+  div.querySelector("pre").textContent = text;
+  append(div); stats();
+}
+function note(text) { const div = document.createElement("div"); div.className = "entry note"; div.textContent = text; append(div); }
+function append(div) { const log = $("log"), stick = log.scrollTop + log.clientHeight >= log.scrollHeight - 30; log.append(div); if (stick) log.scrollTop = log.scrollHeight; }
+function stats() { $("stats").textContent = `${count} messages · ${(total / 1024).toFixed(1)} KB · ~${Math.round(total / 3).toLocaleString()} tokens`; }
+async function send(msg) {
+  logEntry("out", msg);
+  const r = await engine.call(msg, agent);
+  logEntry("in", r);
+  if (r.ping && r.receipt) pings.set(r.receipt, { ping: r.receipt, ...r.ping });
+  return r;
+}
+const waitPing = id => pings.has(id) ? Promise.resolve(pings.get(id)) : new Promise(res => pingWaiters.set(id, res));
+$("send").onclick = async () => {
+  let msg; try { msg = JSON.parse($("input").value); } catch (e) { note("That isn't valid JSON: " + e.message); return; }
+  send(msg);
+};
+$("input").addEventListener("keydown", e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); $("send").click(); } });
+$("q-observe").onclick = () => send({ action: "observe", path: "/" });
+$("q-listen").onclick = () => send({ action: "listen", path: "/" });
+$("clear").onclick = () => { $("log").innerHTML = ""; total = 0; count = 0; stats(); };
+$("indent").onchange = () => { for (const d of $("log").querySelectorAll(".entry[data-json]")) d.querySelector("pre").textContent = $("indent").checked ? JSON.stringify(JSON.parse(d.dataset.json), null, 2) : d.dataset.json; };
+
+let sampleRunning = false;
+$("sample").onclick = async () => {
+  if (sampleRunning) return; sampleRunning = true; $("sample").disabled = true;
+  try { await sampleTask(); } finally { sampleRunning = false; $("sample").disabled = false; }
+};
+async function sampleTask() {
+  note('Task: "Ship the latest storefront commit to production."');
+  await send({ action: "observe", path: "/" });
+  await send({ action: "listen", path: "/services/storefront" });
+  await send({ action: "listen", path: "/environments" });
+  note("The latest commit has no build yet. Start one.");
+  const r = await send({ action: "build", path: "/services/storefront" });
+  if (r.feedback) return note("The build was refused: " + r.feedback.message);
+  const bpath = r.busy[0], bid = parts(bpath).pop();
+  note(`Waiting for ${r.receipt} to settle. Meanwhile the build is busy; anyone can observe its progress.`);
+  await sleep(1500);
+  await send({ action: "observe", path: bpath });
+  const p = await waitPing(r.receipt);
+  if (!p.changed) return note("The build didn't finish. Stopping.");
+  const b = await send({ action: "observe", path: bpath });
+  if (b.node.status !== "passed") return note(`${bid} ${b.node.status}${b.node.failed_test ? ": " + b.node.failed_test : ""}. Reporting back instead of deploying.`);
+  note("Passed. Staging first: production only takes builds that ran on staging. `wait` gets receipt and ping together.");
+  const s = await send({ action: "deploy", path: bpath, env: "staging", wait: true });
+  if (s.feedback) return note("Refused: " + s.feedback.message);
+  const prod = await send({ action: "deploy", path: bpath, env: "production" });
+  if (prod.feedback) return note("Refused: " + prod.feedback.message);
+  note("Production needs a person's approval (answer_by: person). Approve or reject it in the alert at the top of the page.");
+  const pp = await waitPing(prod.receipt);
+  if (pp.changed) { note(`Done. Production runs ${bid}.`); await send({ action: "observe", path: "/environments/production/running" }); }
+  else note("Not deployed: it was rejected or expired. Reporting back.");
+}
+
+// For anything driving this page from outside (a test, a browser-automation agent): calls go through the console log.
+window.releaseDesk = { engine, call: send, waitPing };
+stats(); draw();
+</script>
+</body>
+</html>

@@ -140,6 +140,16 @@ next where possible.
 "c4":{"busy":{"by":"s57","last":{"name":"Done","limit":null,"cards":["k8"]}}}
 ```
 
+A submission that creates something that takes time (a build, an export) makes the new
+node appear at once, busy, with no `last`, since it had no value before. The receipt's
+`busy` list gives its path, so the caller knows the new id straight away.
+
+When running work can be stopped, its busy marker offers the call that stops it:
+`"cancel":{"action":"cancel","path":"/","submission":"s15"}`. The built-in `cancel`
+(see 6) then stops the work, and the submission settles with whatever the app records for
+stopped work (a cancelled build, say). Who may cancel is up to the app; its doc for
+`cancel` says.
+
 A busy marker may also carry `progress`, when the app genuinely knows how far along it
 is. It counts real units of work, with an optional message for the agent:
 `"progress":{"done":44,"total":100,"message":"Archiving cards: 44 of 100"}`.
@@ -180,8 +190,9 @@ as for any submission, and puts an alert at the root, where everyone observing s
 - The caller's receipt carries the alert, and so does the busy event listeners get. A
   submission sent with `"wait": true` gets its receipt at once with the alert: there is
   nothing to wait for until someone answers.
-- `confirm` and `cancel` are built in on the root, and not listed in any `api`. They
-  are submissions that change nothing themselves: answering lets the original submission
+- `confirm` and `cancel` are built in on the root, and not listed in any `api`. (`cancel`
+  also stops running work whose busy marker offers it; see 5.) They are submissions that
+  change nothing themselves: answering lets the original submission
   settle, and its ping reports what happened. After `cancel`, that ping says nothing
   changed.
 - `answer_by` says who may answer: `caller` (the agent that submitted it) or `person`
@@ -305,8 +316,9 @@ used as ids.
 
 ## Examples
 
-Each example has the app itself (`app.html`), its tree (`state.json`), its docs
-(`doc/`) and a sample session (`exchange.json`).
+The first three examples are apps built first, with a representation written afterwards:
+the app itself (`app.html`), its tree (`state.json`), its docs (`doc/`) and a sample
+session (`exchange.json`). The release desk is a live app built on the protocol.
 
 - [`examples/todo`](examples/todo): a to-do list. Small enough that nothing folds.
 - [`examples/kanban`](examples/kanban): a kanban board with columns, card limits,
@@ -314,6 +326,11 @@ Each example has the app itself (`app.html`), its tree (`state.json`), its docs
 - [`examples/spreadsheet`](examples/spreadsheet): a two-sheet budget with formulas,
   references between sheets, error values and row insert/delete. Its cells are
   addressed by position, which the other examples avoid.
+- [`examples/release-desk`](examples/release-desk): built the other way round. The protocol
+  came first: the app is the tree, its actions and its events, and the web page is just
+  one client of it, like the agent. Builds and deploys take real time, production needs a
+  person's approval, and a console shows every message the agent sends and receives.
+  Open `index.html` in a browser.
 
 `tools/fold.py` is a reference implementation of the queries (folding, views, `since`,
 overflow, `page`, `find`, busy nodes) and of the bookkeeping behind receipts and pings.

@@ -22,9 +22,12 @@ Everything here is deliberately mechanical:
 3. Folding: while the answer is over `budget` bytes, the app folds the smallest
    node whose folding alone brings it under budget, or, if no single node is
    enough, the largest node, and repeats. Nodes protected by an `expand` are
-   never folded. A stub keeps the node's `api`.
+   never folded. A stub keeps the node's `api`, and a collection's stub keeps
+   its children's `api` under `*`.
+4. Arrays stay arrays. Cut short, an array keeps its first items and ends with
+   "... N more items"; folded by the agent, it is ["N items"].
 """
-import argparse, copy, json
+import argparse, copy, json, re
 
 RESERVED = {"app", "api", "*", "folded", "overflow", "busy", "alerts"}
 NEVER_FOLD = {"app", "api", "overflow", "busy", "alerts"}
@@ -101,12 +104,47 @@ def is_busy(node):
     return isinstance(node, dict) and isinstance(node.get("busy"), dict)
 
 
+MORE = re.compile(r"^\.\.\. (\d+) more items?$")
+ONLY = re.compile(r"^(\d+) items?$")
+
+
+def array_len(a):
+    """How many items an array really has, counting any it says it left out."""
+    if a and isinstance(a[-1], str):
+        if MORE.match(a[-1]):
+            return len(a) - 1 + int(MORE.match(a[-1]).group(1))
+        if len(a) == 1 and ONLY.match(a[0]):
+            return int(ONLY.match(a[0]).group(1))
+    return len(a)
+
+
+def cut_array(a, keep):
+    """An array cut short stays an array: its first items, then a note of how many more."""
+    total = array_len(a)
+    if len(a) <= keep or total <= keep:
+        return a
+    more = total - keep
+    return a[:keep] + [f"... {more} more item{'' if more == 1 else 's'}"]
+
+
+def is_folded(v):
+    """Folded as far as it goes. An array cut at the overflow limit can still be cut further."""
+    if isinstance(v, dict):
+        return "folded" in v
+    return isinstance(v, list) and len(v) == 1 and isinstance(v[0], str) and bool(ONLY.match(v[0]))
+
+
 def window_all(tree, node, path, max_children, tmpl=None):
-    """Apply the overflow limit to every collection in the subtree."""
+    """Apply the overflow limit to every collection, and every array, in the subtree."""
     if tmpl is None:
         tmpl = template_at(tree, path)
+    if isinstance(node, list):
+        return cut_array(node, max_children)
     if not isinstance(node, dict) or is_busy(node):
         return node
+    for k, v in node.items():
+        if isinstance(v, list):
+            node[k] = cut_array(v, max_children)
     keys = data_keys(node)
     if "*" in tmpl and len(keys) > max_children:
         node = window(node, keys, max_children, {"action": "page", "path": path})
@@ -128,23 +166,43 @@ def count_busy(node):
 
 
 def count_children(node):
-    n = len(data_keys(node)) if isinstance(node, dict) else len(node)
-    return f"{n} {'children' if isinstance(node, dict) else 'items'}"
+    n = len(data_keys(node)) if isinstance(node, dict) else array_len(node)
+    if isinstance(node, dict):
+        return f"{n} child" if n == 1 else f"{n} children"
+    return f"{n} item" if n == 1 else f"{n} items"
 
 
-def auto_stub(node, tmpl=None):
-    """Folded by the app: a summary, with the node's api still visible (from the node or its template)."""
+KEEP_IN_ARRAY = 2   # how many items an array keeps when the app cuts it to save space
+
+
+def auto_stub(node, tmpl=None, parent=None):
+    """Folded by the app. Returns None if folding wouldn't apply.
+
+    An object becomes a summary that still shows what can be done: its own `api`,
+    and for a collection its children's `api` under `*`. A member of a collection
+    whose `*` is in view doesn't repeat that `api`.
+    An array stays an array: its first items and a note of how many more.
+    """
+    if isinstance(node, list):
+        cut = cut_array(node, KEEP_IN_ARRAY)
+        return cut if cut is not node else None
+    tmpl = tmpl or {}
+    out = {}
+    api = node.get("api") or tmpl.get("api")
+    shared = (parent or {}).get("*")
+    if api and not ("api" not in node and isinstance(shared, dict) and shared.get("api") == api):
+        out["api"] = api
+    star = node.get("*") if isinstance(node.get("*"), dict) else tmpl.get("*")
+    if isinstance(star, dict) and star.get("api"):
+        out["*"] = {"api": star["api"]}
     b = count_busy(node)
-    api = node.get("api") if isinstance(node, dict) else None
-    api = api or (tmpl or {}).get("api")
-    out = {"api": api} if api else {}
     out["folded"] = f"{count_children(node)}{f', {b} busy' if b else ''}, {size(node) / 1024:.1f} KB"
     return out
 
 
 def min_stub(node):
-    """Folded by the agent's choice: the barest summary."""
-    return {"folded": count_children(node)}
+    """Folded by the agent's choice: the barest summary. An array stays an array."""
+    return [count_children(node)] if isinstance(node, list) else {"folded": count_children(node)}
 
 
 def foldable(node, path):
@@ -152,7 +210,7 @@ def foldable(node, path):
     if not isinstance(node, dict):
         return
     for k, v in node.items():
-        if k in NEVER_FOLD or not isinstance(v, (dict, list)) or (isinstance(v, dict) and "folded" in v):
+        if k in NEVER_FOLD or not isinstance(v, (dict, list)) or is_folded(v):
             continue
         p = child_path(path, k)
         yield p, node, k, v
@@ -194,8 +252,8 @@ def fold(node, path, budget, views=None, tree=None):
         for p, parent, k, v in foldable(node, path):
             if protected(p):
                 continue
-            stub = auto_stub(v, template_at(tree, p) if tree else None)
-            saving = size(v) - size(stub)
+            stub = auto_stub(v, template_at(tree, p) if tree else None, parent)
+            saving = size(v) - size(stub) if stub is not None else 0
             if saving > 0:
                 candidates.append((size(v), saving, parent, k, stub))
         if not candidates:
@@ -230,6 +288,8 @@ def view(views, path, mode):
 
 def page(tree, path, after, budget=2048, max_children=100, views=None):
     node = visible(get(tree, path))
+    if isinstance(node, list):   # an array: `after` is how many items the agent already has
+        return answer(tree, cut_array(node[int(after):], max_children))
     keys = data_keys(node)
     rest = keys[keys.index(after) + 1:] if after in keys else keys
     return answer(tree, fold(window(node, rest, max_children, {"action": "page", "path": path}), path, budget, views, tree))

@@ -9,3 +9,6 @@ Call: `{"action": "page", "path": "<collection path>", "after": "<id>"}`, for ex
   answer holds only some of a collection's children, its `overflow.next` is this call.
 
 Up to 100 children per answer, with another `overflow` note if there are more.
+
+It also works on an array that was cut short (one ending in `"... <n> more items"`):
+there `after` is the number of items you already have, like `"after": 100`.

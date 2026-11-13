@@ -327,7 +327,7 @@
     "NSGlobalDomain": {"AppleInterfaceStyle": "Dark", "AppleShowAllExtensions": true, "AppleLanguages": ["en-US"], "AppleLocale": "en_US",
                        "KeyRepeat": 2, "InitialKeyRepeat": 15, "com.apple.swipescrolldirection": true, "NSAutomaticSpellingCorrectionEnabled": false},
     "com.apple.dock": {"autohide": true, "tilesize": 48, "orientation": "bottom", "show-recents": false, "mru-spaces": false,
-                       "persistent-apps": {"folded": "11 items, 3.2 KB"}},
+                       "persistent-apps": [{"bundle": "com.apple.Safari"}, {"bundle": "com.apple.mail"}, "... 9 more items"]},
     "com.apple.finder": {"ShowPathbar": true, "FXPreferredViewStyle": "Nlsv", "AppleShowAllFiles": false, "FXDefaultSearchScope": "SCcf", "NewWindowTarget": "PfHm"},
     "com.apple.screencapture": {"location": "/Users/alex/Screenshots", "type": "png", "show-thumbnail": true},
     "overflow": {"shown": 4, "total": 412, "next": {"action": "page", "path": "/settings", "after": "com.apple.screencapture"}}

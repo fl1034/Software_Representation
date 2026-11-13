@@ -158,6 +158,23 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 function getAt(tree, path) { let n = tree; for (const k of parts(path)) { if (!isObj(n) || !(k in n)) return undefined; n = n[k]; } return n; }
 function setAt(tree, path, v) { const ps = parts(path), last = ps.pop(); let n = tree; for (const k of ps) n = n[k]; n[last] = v; }
 function delAt(tree, path) { const ps = parts(path), last = ps.pop(); let n = tree; for (const k of ps) n = n?.[k]; if (isObj(n)) delete n[last]; }
+// Arrays stay arrays: cut short they end with "... N more items"; folded by the agent they are ["N items"].
+const MORE = /^\.\.\. (\d+) more items?$/, ONLY = /^(\d+) items?$/;
+function arrayLen(a) {
+  const last = a[a.length - 1];
+  if (typeof last === "string") {
+    if (MORE.test(last)) return a.length - 1 + +MORE.exec(last)[1];
+    if (a.length === 1 && ONLY.test(last)) return +ONLY.exec(last)[1];
+  }
+  return a.length;
+}
+function cutArray(a, keep) {
+  const total = arrayLen(a);
+  if (a.length <= keep || total <= keep) return a;
+  return [...a.slice(0, keep), `... ${total - keep} more item${total - keep === 1 ? "" : "s"}`];
+}
+const isFolded = v => isObj(v) ? "folded" in v : Array.isArray(v) && v.length === 1 && typeof v[0] === "string" && ONLY.test(v[0]);
+const KEEP_IN_ARRAY = 2;
 function capped(o, key, list) { if (list.length) { o[key] = list.slice(0, LIST_CAP); if (list.length > LIST_CAP) o[key + "_total"] = list.length; } return o; }
 
 class Engine {
@@ -225,8 +242,10 @@ class Engine {
     return out;
   }
   windowAll(node, path, tmpl) {
+    if (Array.isArray(node)) return cutArray(node, MAX_CHILDREN);
     if (!isObj(node) || isObj(node.busy)) return node;
     tmpl = tmpl ?? this.templateAt(path);
+    for (const k of Object.keys(node)) if (Array.isArray(node[k])) node[k] = cutArray(node[k], MAX_CHILDREN);
     const keys = dataKeys(node);
     if ("*" in tmpl && keys.length > MAX_CHILDREN) node = this.window(node, keys, { action: "page", path });
     for (const k of dataKeys(node)) {
@@ -238,14 +257,15 @@ class Engine {
 
   // folding: views first, then the smallest node that alone brings the answer under budget
   fold(node, path, views) {
-    const label = n => `${isObj(n) ? dataKeys(n).length + " children" : n.length + " items"}`;
+    const label = n => { const c = isObj(n) ? dataKeys(n).length : arrayLen(n); return `${c} ${isObj(n) ? (c === 1 ? "child" : "children") : (c === 1 ? "item" : "items")}`; };
+    const minStub = v => Array.isArray(v) ? [label(v)] : { folded: label(v) };
     const countBusy = n => isObj(n) ? (isObj(n.busy) ? 1 : Object.entries(n).reduce((a, [k, v]) => a + (k === "*" ? 0 : countBusy(v)), 0)) : 0;
     const applyFolds = (n, p) => {
       if (!isObj(n)) return;
       for (const [k, v] of Object.entries(n)) {
         if (NEVER_FOLD.has(k) || !(isObj(v) || Array.isArray(v))) continue;
         const cp = join(p, k);
-        if (views[cp] === "fold") n[k] = { folded: label(v) }; else applyFolds(v, cp);
+        if (views[cp] === "fold") n[k] = minStub(v); else applyFolds(v, cp);
       }
     };
     applyFolds(node, path);
@@ -255,7 +275,7 @@ class Engine {
     const foldable = function* (n, p) {
       if (!isObj(n)) return;
       for (const [k, v] of Object.entries(n)) {
-        if (NEVER_FOLD.has(k) || !(isObj(v) || Array.isArray(v)) || (isObj(v) && "folded" in v)) continue;
+        if (NEVER_FOLD.has(k) || !(isObj(v) || Array.isArray(v)) || isFolded(v)) continue;
         const cp = join(p, k); yield [cp, n, k, v]; yield* foldable(v, cp);
       }
     };
@@ -263,9 +283,18 @@ class Engine {
       const need = size(node) - BUDGET, cands = [];
       for (const [p, parent, k, v] of foldable(node, path)) {
         if (isProtected(p)) continue;
-        const b = countBusy(v), api = (isObj(v) && v.api) || this.templateAt(p).api;
-        const stub = api ? { api } : {};
-        stub.folded = `${label(v)}${b ? `, ${b} busy` : ""}, ${(size(v) / 1024).toFixed(1)} KB`;
+        let stub;
+        if (Array.isArray(v)) stub = cutArray(v, KEEP_IN_ARRAY);
+        else {
+          // a stub still shows what can be done: the node's api, and a collection's children's api under *.
+          // A member doesn't repeat an api that the collection's * just above it already shows.
+          const t = this.templateAt(p), b = countBusy(v), api = v.api || t.api, shared = isObj(parent["*"]) ? parent["*"].api : null;
+          const star = isObj(v["*"]) ? v["*"] : t["*"];
+          stub = {};
+          if (api && !(!v.api && shared && JSON.stringify(shared) === JSON.stringify(api))) stub.api = api;
+          if (isObj(star) && star.api) stub["*"] = { api: star.api };
+          stub.folded = `${label(v)}${b ? `, ${b} busy` : ""}, ${(size(v) / 1024).toFixed(1)} KB`;
+        }
         const saving = size(v) - size(stub);
         if (saving > 0) cands.push({ s: size(v), saving, parent, k, stub });
       }
@@ -319,7 +348,8 @@ class Engine {
   page(msg, client) {
     const node = this.render(msg.path);
     if (node === undefined) return { error: "not_found", message: `Nothing at ${msg.path}.` };
-    if (!("*" in this.templateAt(msg.path))) return { error: "unknown_action", message: `${msg.path} is not a collection.` };
+    if (Array.isArray(node)) return { version: this.version, node: cutArray(node.slice(+msg.after || 0), MAX_CHILDREN) };   // arrays: after = items already seen
+    if (!("*" in this.templateAt(msg.path))) return { error: "unknown_action", message: `${msg.path} is not a collection or an array.` };
     const keys = dataKeys(node), i = keys.indexOf(msg.after);
     return { version: this.version, node: this.fold(this.window(node, i < 0 ? keys : keys.slice(i + 1), { action: "page", path: msg.path }), msg.path, client.views) };
   }

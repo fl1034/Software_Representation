@@ -230,12 +230,28 @@ version.
 has a size budget. While an answer is over budget, the app replaces a node with a stub:
 the smallest node whose folding alone brings the answer under budget, or, if no single
 node is enough, the largest node, and then it checks again. That way it hides as little
-as it can. A stub the app makes on its own keeps the node's `api`, so the agent can
-still see what it could do there:
+as it can. A stub the app makes on its own still shows what can be done there: the
+node's own `api`, and for a collection its children's `api` under `*`:
 
 ```json
-"cards":{"api":["find"],"folded":"9 children, 1.6 KB"}
+"cards":{"api":["find"],"*":{"api":["rename","move","archive"]},"folded":"9 children, 1.6 KB"}
 ```
+
+When a single child of a collection is folded and the collection's `*` is in view just
+above it, the child's stub doesn't repeat that `api`: `"k7":{"folded":"5 children, 0.2 KB"}`.
+
+**Arrays stay arrays.** A plain array (a list of values, as opposed to a collection of
+items with ids) is never replaced by an object. When the app cuts one short, it keeps the
+first items and ends with a note of how many are left out; when the agent folds one, it
+becomes a one-item array:
+
+```json
+"names":["item1","item2","... 2701 more items"]      cut by the app
+"names":["2703 items"]                                folded by the agent
+```
+
+An array never shows more than 100 items, like a collection; to fit the budget the app
+may cut it down to its first two. `page` gets the rest (see 8).
 
 The rule is mechanical: the app doesn't guess what the agent needs. To see a folded
 node, the agent observes its path.
@@ -248,8 +264,8 @@ node to one of three views:
 → {"view":"expand"}
 ```
 
-- `fold`: shown as the barest summary, `{"folded":"4 children"}`, wherever it appears
-  in an observation.
+- `fold`: shown as the barest summary, `{"folded":"4 children"}` (or `["4 items"]` for an
+  array), wherever it appears in an observation.
 - `expand`: shown in full. The app never folds it or anything inside it to save space;
   only the overflow limit (see 8) still applies. Nodes above it aren't folded either,
   so it stays in sight.
@@ -291,7 +307,9 @@ The note appears only when children are actually left out.
 
 - `page` is built in on every collection. It returns the children after a given id, in
   the collection's order. It uses a cursor (`"after": "k100"`), not a page number, so
-  items added or removed meanwhile don't shift what comes next.
+  items added or removed meanwhile don't shift what comes next. It also works on an array
+  that was cut short; there `after` is the number of items the agent already has
+  (`"after": 100`), since array items have no ids.
 - `find` returns only the children whose fields equal the values given, and/or whose
   text contains some words. Deliberately simple: exact matches plus a text search.
   A collection that could grow past 100 always lists `find` in its `api`, whatever its

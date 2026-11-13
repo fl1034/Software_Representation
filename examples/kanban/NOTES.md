@@ -5,7 +5,7 @@ with optional card limits, cards with labels, an assignee, a due date, a
 checklist and comments, plus archive, restore and permanent delete.
 
 - `state.json`: the full tree, about 2.1 KB. At a 2 KB budget, `observe /`
-  folds `/columns`, the smallest node that is enough.
+  folds one card, the smallest node that is enough.
 - `doc/`: one Markdown file per action, plus the app README and the cards item doc,
   28 files, about 0.4 KB each.
 - `exchange.json`: an agent closing out a bug card, then hitting a card limit and a
@@ -25,8 +25,8 @@ checklist and comments, plus archive, restore and permanent delete.
   message. The sample session treats `archive_all` as slow: the receipt lists the busy
   nodes, an observation in between shows them marked busy, a move on a busy card is
   refused, and the ping arrives later. (In `app.html` it is instant too.)
-- **Views.** The agent expands `/cards` and folds `/labels`. The app still folds
-  `/columns` on its own to stay under budget, keeping its `api` visible, while the
+- **Views.** The agent expands `/cards` and folds `/labels`. With no card allowed to
+  fold, the app folds `/columns` instead, keeping the column actions visible, while the
   agent's own fold of `/labels` is bare.
 - **Confirmation.** Deleting a card for good asks first: the receipt carries an alert,
   the card is busy until someone answers, and the agent confirms because the deletion is
@@ -50,8 +50,8 @@ drag and drop. All of it exists to help a person look at the board.
 
 ## Size
 
-The sample session's 26 messages total 7.3 KB. Before the compaction pass (no paths in
+The sample session's 26 messages total 7.5 KB. Before the compaction pass (no paths in
 the tree, no echoes, item docs, compact JSON) the same session was 9.5 KB compact, or
 16 KB indented. Part of today's figure is a better folding rule: the opening view now
-folds only `/columns`, the smallest node that keeps it under budget, so the agent sees
-every card at once instead of a stub for all of them.
+folds a single card, the smallest node that keeps it under budget, so the agent sees
+nearly the whole board at once instead of a stub for all the cards.

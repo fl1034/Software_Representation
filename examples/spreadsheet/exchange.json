@@ -30,7 +30,7 @@
     "note": "The agent fetches just the new values, across both sheets. The savings rate is /sheets/s2/cells/B6.",
     "call": {"action":"observe","path":"/","since":20},
     "receive": [
-      {"version":21,"node":{"sheets":{"s1":{"cells":{"C3":500,"E3":{"f":"=SUM(B3:D3)","v":1362},"E7":{"f":"=SUM(B7:D7)","v":5926},"C7":{"f":"=SUM(C2:C6)","v":2065},"F3":{"f":"=ROUND(AVERAGE(B3:D3),2)","v":454},"F7":{"f":"=ROUND(AVERAGE(B7:D7),2)","v":1975.33},"E10":{"f":"=E9-E7","v":3524},"C10":{"f":"=C9-C7","v":1035}}},"s2":{"cells":{"B6":{"f":"=ROUND(B5/B4*100,1)","v":37.3},"B5":{"f":"=B4-B3","v":3524},"B3":{"f":"=Budget!E7","v":5926}}}}}}
+      {"version":21,"node":{"sheets":{"s1":{"cells":{"E3":{"f":"=SUM(B3:D3)","v":1362},"F3":{"f":"=ROUND(AVERAGE(B3:D3),2)","v":454},"E7":{"f":"=SUM(B7:D7)","v":5926},"F7":{"f":"=ROUND(AVERAGE(B7:D7),2)","v":1975.33},"C3":500,"C7":{"f":"=SUM(C2:C6)","v":2065},"C10":{"f":"=C9-C7","v":1035},"E10":{"f":"=E9-E7","v":3524}}},"s2":{"cells":{"B6":{"f":"=ROUND(B5/B4*100,1)","v":37.3},"B5":{"f":"=B4-B3","v":3524},"B3":{"f":"=Budget!E7","v":5926}}}}}}
     ]
   },
   {

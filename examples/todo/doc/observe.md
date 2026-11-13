@@ -2,17 +2,17 @@
 
 Read any node of the tree. A query: changes nothing, answers at once.
 
-Call: `{"action": "observe", "path": "<path>"}`, for example `/` or `/cards/k4`.
+Call: `{"action": "observe", "path": "<path>"}`, for example `/` or `/tasks/3`.
 
-Reply: `{"path": "<path>", "version": <n>, "node": <the node>}`. Busy nodes show their last
+Answer: `{"version": <n>, "node": <the node>}`. Busy nodes show their last
 well-defined value, marked `busy` (see `README.md`).
 
-Replies stay under 2 KB. To fit, the app replaces large nodes with
-`{"path": ..., "api": [...], "folded": "<summary>. Observe <its path>"}`; observe that path
-to see it. To control this yourself, see `view.md`.
+Answers stay under 2 KB. To fit, the app replaces large nodes with
+`{"api": [...], "folded": "<n> children, <size>"}`; observe that node's path to see it.
+To control this yourself, see `view.md`.
 
-A collection never lists more than 100 children. If it has more, the reply ends with
-`"overflow": {"message": "...", "next": <call>}`: send `next` to get the following ones.
+A collection never shows more than 100 children. If it has more, it ends with
+`"overflow": {"shown": 100, "total": <n>, "next": <call>}`: send `next` for the rest.
 
 **Only what changed:** add `"since": <version>`. Then `node` holds only the parts
 changed after that version, nested under their parents (anything not shown is

@@ -4,9 +4,10 @@
 with optional card limits, cards with labels, an assignee, a due date, a
 checklist and comments, plus archive, restore and permanent delete.
 
-- `state.json`: the full tree, about 2.5 KB. At a 2 KB budget, `observe /`
+- `state.json`: the full tree, about 2.1 KB. At a 2 KB budget, `observe /`
   folds `/cards`.
-- `doc/`: one Markdown file per action plus a README, 25 files, about 0.4 KB each.
+- `doc/`: one Markdown file per action, plus the app README and the cards item doc,
+  26 files, about 0.4 KB each.
 - `exchange.json`: an agent closing out a bug card, then hitting a card limit and a
   change made by someone else, clearing out Done with a slow `archive_all`,
   searching with `find`, and an overflowing list.
@@ -16,8 +17,8 @@ checklist and comments, plus archive, restore and permanent delete.
 - **Order separate from identity.** Cards live in `/cards`, and each column holds
   the order as a list of card ids. A move changes two lists; no card's path changes.
 - **Nested `*`.** Checklist items have their own actions: `/cards/*/checklist/*`.
-- **`defaults`.** Most cards have no description, checklist or comments, and omit them.
-- **`derived`.** `overdue` is precomputed, and replies recompute it.
+- **Item doc.** Most cards have no description, checklist or comments, and omit them.
+  `overdue` is computed by the app. Both are explained once, in `doc/cards/_/README.md`.
 - **References.** Assignees and labels are ids under `/members` and `/labels`.
 - **Read-only branches.** Members and labels have no `api`; comments can only be paged.
 - **Receipt, busy, ping.** Most actions settle at once, so receipt and ping arrive as one
@@ -25,8 +26,7 @@ checklist and comments, plus archive, restore and permanent delete.
   nodes, an observation in between shows them marked busy, a move on a busy card is
   refused, and the ping arrives later. (In `app.html` it is instant too.)
 - **Views.** The agent expands `/cards` and folds `/labels`. The app then folds
-  `/members` and `/columns` on its own to stay near budget, keeping their `path` and
-  `api` visible, while the agent's own fold of `/labels` is bare.
+  `/columns` on its own to stay near budget, keeping its `api` visible, while the agent's own fold of `/labels` is bare.
 - **Pings from others.** The agent listens on `/` and hears Priya's change as a ping,
   instead of discovering it through a `stale` error.
 
@@ -44,6 +44,6 @@ drag and drop. All of it exists to help a person look at the board.
 
 ## Size
 
-Before the docs moved out of the tree, the same board was about 10 KB, 7 KB of it
-API documentation. Now the tree is 2.5 KB and an agent that only moves a card and
-comments on it reads two docs, under 1 KB together.
+The sample session's 21 messages total 5.5 KB. Before the compaction pass
+(no paths in the tree, no echoes, item docs, compact JSON) the same session was 9.5 KB
+compact, or 16 KB indented.

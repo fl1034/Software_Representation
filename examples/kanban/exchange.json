@@ -1,145 +1,145 @@
 [
   {
-    "note": "Task given to the agent: \"The login bug is fixed. Tick off the fix, send it to review and tell Priya.\" First look at the whole board. /cards is over the 2 KB budget, so it comes back folded.",
-    "call": {"action": "observe", "path": "/"},
+    "note": "Task given to the agent: \"The login bug is fixed. Tick off the fix, send it to review and tell Priya.\" First look at the whole board. It is over the 2 KB budget, so the app folds /cards, keeping its api visible.",
+    "call": {"action":"observe","path":"/"},
     "receive": [
-      {"path": "/", "version": 37, "node": {"app": "Sprint Board", "version": 37, "docs": "doc/README.md", "api": ["observe", "view", "listen"], "today": "2026-11-12", "me": "u1", "members": {"*": {"path": "/members/<member id>"}, "u1": {"name": "You"}, "u2": {"name": "Priya Shah"}, "u3": {"name": "Sam Ortiz"}}, "labels": {"*": {"path": "/labels/<label id>"}, "l1": {"name": "Bug"}, "l2": {"name": "Feature"}, "l3": {"name": "Design"}, "l4": {"name": "Chore"}}, "columns": {"path": "/columns", "api": ["add"], "*": {"path": "/columns/<column id>", "api": ["rename", "set_limit", "delete", "add_card", "archive_all"]}, "c1": {"name": "Backlog", "limit": null, "cards": ["k1", "k2", "k3"]}, "c2": {"name": "In progress", "limit": 3, "cards": ["k4", "k5", "k6"]}, "c3": {"name": "Review", "limit": 2, "cards": ["k7"]}, "c4": {"name": "Done", "limit": null, "cards": ["k8"]}}, "cards": {"path": "/cards", "api": ["find"], "folded": "9 children, 1.9 KB. Observe /cards"}}}
+      {"version":37,"node":{"app":"Sprint Board","today":"2026-11-12","me":"u1","members":{"*":{},"u1":{"name":"You"},"u2":{"name":"Priya Shah"},"u3":{"name":"Sam Ortiz"}},"labels":{"*":{},"l1":{"name":"Bug"},"l2":{"name":"Feature"},"l3":{"name":"Design"},"l4":{"name":"Chore"}},"columns":{"api":["add"],"*":{"api":["rename","set_limit","delete","add_card","archive_all"]},"c1":{"name":"Backlog","limit":null,"cards":["k1","k2","k3"]},"c2":{"name":"In progress","limit":3,"cards":["k4","k5","k6"]},"c3":{"name":"Review","limit":2,"cards":["k7"]},"c4":{"name":"Done","limit":null,"cards":["k8"]}},"cards":{"api":["find"],"folded":"9 children, 1.6 KB"}}}
     ]
   },
   {
     "note": "Listen to the whole board, so the agent hears about changes others make.",
-    "call": {"action": "listen", "path": "/"},
+    "call": {"action":"listen","path":"/"},
     "receive": [
-      {"path": "/", "version": 37, "listening": true}
+      {"listening":true}
     ]
   },
   {
-    "note": "The agent will be working with cards, so it asks to see /cards in full from now on. The answer shows all cards. Like observe, this is a query: no receipt, no ping.",
-    "call": {"action": "view", "path": "/cards", "view": "expand"},
+    "note": "The agent will be working with cards, so it asks to see /cards in full from now on. Like observe, this is a query: no receipt, no ping.",
+    "call": {"action":"view","path":"/cards","view":"expand"},
     "receive": [
-      {"path": "/cards", "version": 37, "view": "expand", "node": {"path": "/cards", "api": ["find"], "*": {"path": "/cards/<card id>", "api": ["rename", "set_description", "set_labels", "assign", "set_due", "move", "archive", "restore", "delete", "add_checklist_item", "comment"], "defaults": {"description": "", "labels": [], "assignee": null, "due": null, "overdue": false, "checklist": {}, "comments": {}, "archived": false}, "derived": {"overdue": "due < today and the card is not in the last column"}, "checklist": {"*": {"path": "/cards/<card id>/checklist/<item id>", "api": ["set_done", "remove"]}}, "comments": {"*": {"path": "/cards/<card id>/comments/<comment id>"}}}, "k1": {"title": "Dark mode for settings page", "labels": ["l2", "l3"]}, "k2": {"title": "Upgrade build tooling", "labels": ["l4"], "assignee": "u3"}, "k3": {"title": "Export board as CSV", "labels": ["l2"], "due": "2026-11-26"}, "k4": {"title": "Login fails with + in email", "labels": ["l1"], "assignee": "u2", "due": "2026-11-10", "overdue": true, "description": "Reported by two customers. Repro: sign up with a+b@example.com, then log in.", "checklist": {"k4-i1": {"text": "Reproduce locally", "done": true}, "k4-i2": {"text": "Fix email normalisation", "done": false}, "k4-i3": {"text": "Add regression test", "done": false}}, "comments": {"k4-m4": {"author": "u2", "text": "Found it: we URL-decode the address twice.", "at": "2026-11-11"}}}, "k5": {"title": "Onboarding checklist UI", "labels": ["l2", "l3"], "assignee": "u1", "due": "2026-11-15", "checklist": {"k5-i1": {"text": "Wireframe", "done": true}, "k5-i2": {"text": "Build component", "done": true}, "k5-i3": {"text": "Hook up API", "done": false}}}, "k6": {"title": "Rate-limit the public API", "labels": ["l2"], "assignee": "u3", "due": "2026-11-19"}, "k7": {"title": "Fix flaky date-picker test", "labels": ["l1", "l4"], "assignee": "u1", "due": "2026-11-13", "comments": {"k7-m1": {"author": "u3", "text": "Can you check the timezone handling too?", "at": "2026-11-12"}}}, "k8": {"title": "Release notes for 2.4", "labels": ["l4"], "assignee": "u2", "due": "2026-11-07"}, "k9": {"title": "Old pricing page banner", "labels": ["l3"], "archived": "c1"}}}
+      {"view":"expand"}
     ]
   },
   {
     "note": "It won't need the labels, so it folds them to the barest summary.",
-    "call": {"action": "view", "path": "/labels", "view": "fold"},
+    "call": {"action":"view","path":"/labels","view":"fold"},
     "receive": [
-      {"path": "/labels", "version": 37, "view": "fold", "node": {"folded": "4 children"}}
+      {"view":"fold"}
     ]
   },
   {
-    "note": "The board again, with both views applied. /cards is expanded, so to stay near 2 KB the app folds /members and /columns instead. Its own stubs keep path and api visible; the agent's fold of /labels is bare.",
-    "call": {"action": "observe", "path": "/"},
+    "note": "The board again, with both views applied. /cards is expanded, so the app folds /columns instead to stay near budget, keeping its api visible. The agent's own fold of /labels is bare. Before reading the cards, the agent reads doc/cards/_/README.md, which explains the fields cards leave out.",
+    "call": {"action":"observe","path":"/"},
     "receive": [
-      {"path": "/", "version": 37, "node": {"app": "Sprint Board", "version": 37, "docs": "doc/README.md", "api": ["observe", "view", "listen"], "today": "2026-11-12", "me": "u1", "members": {"folded": "3 children, 0.1 KB. Observe /members"}, "labels": {"folded": "4 children"}, "columns": {"path": "/columns", "api": ["add"], "folded": "4 children, 0.3 KB. Observe /columns"}, "cards": {"path": "/cards", "api": ["find"], "*": {"path": "/cards/<card id>", "api": ["rename", "set_description", "set_labels", "assign", "set_due", "move", "archive", "restore", "delete", "add_checklist_item", "comment"], "defaults": {"description": "", "labels": [], "assignee": null, "due": null, "overdue": false, "checklist": {}, "comments": {}, "archived": false}, "derived": {"overdue": "due < today and the card is not in the last column"}, "checklist": {"*": {"path": "/cards/<card id>/checklist/<item id>", "api": ["set_done", "remove"]}}, "comments": {"*": {"path": "/cards/<card id>/comments/<comment id>"}}}, "k1": {"title": "Dark mode for settings page", "labels": ["l2", "l3"]}, "k2": {"title": "Upgrade build tooling", "labels": ["l4"], "assignee": "u3"}, "k3": {"title": "Export board as CSV", "labels": ["l2"], "due": "2026-11-26"}, "k4": {"title": "Login fails with + in email", "labels": ["l1"], "assignee": "u2", "due": "2026-11-10", "overdue": true, "description": "Reported by two customers. Repro: sign up with a+b@example.com, then log in.", "checklist": {"k4-i1": {"text": "Reproduce locally", "done": true}, "k4-i2": {"text": "Fix email normalisation", "done": false}, "k4-i3": {"text": "Add regression test", "done": false}}, "comments": {"k4-m4": {"author": "u2", "text": "Found it: we URL-decode the address twice.", "at": "2026-11-11"}}}, "k5": {"title": "Onboarding checklist UI", "labels": ["l2", "l3"], "assignee": "u1", "due": "2026-11-15", "checklist": {"k5-i1": {"text": "Wireframe", "done": true}, "k5-i2": {"text": "Build component", "done": true}, "k5-i3": {"text": "Hook up API", "done": false}}}, "k6": {"title": "Rate-limit the public API", "labels": ["l2"], "assignee": "u3", "due": "2026-11-19"}, "k7": {"title": "Fix flaky date-picker test", "labels": ["l1", "l4"], "assignee": "u1", "due": "2026-11-13", "comments": {"k7-m1": {"author": "u3", "text": "Can you check the timezone handling too?", "at": "2026-11-12"}}}, "k8": {"title": "Release notes for 2.4", "labels": ["l4"], "assignee": "u2", "due": "2026-11-07"}, "k9": {"title": "Old pricing page banner", "labels": ["l3"], "archived": "c1"}}}}
+      {"version":37,"node":{"app":"Sprint Board","today":"2026-11-12","me":"u1","members":{"*":{},"u1":{"name":"You"},"u2":{"name":"Priya Shah"},"u3":{"name":"Sam Ortiz"}},"labels":{"folded":"4 children"},"columns":{"api":["add"],"folded":"4 children, 0.3 KB"},"cards":{"api":["find"],"*":{"api":["rename","set_description","set_labels","assign","set_due","move","archive","restore","delete","add_checklist_item","comment"],"checklist":{"*":{"api":["set_done","remove"]}},"comments":{"*":{}}},"k1":{"title":"Dark mode for settings page","labels":["l2","l3"]},"k2":{"title":"Upgrade build tooling","labels":["l4"],"assignee":"u3"},"k3":{"title":"Export board as CSV","labels":["l2"],"due":"2026-11-26"},"k4":{"title":"Login fails with + in email","labels":["l1"],"assignee":"u2","due":"2026-11-10","overdue":true,"description":"Reported by two customers. Repro: sign up with a+b@example.com, then log in.","checklist":{"k4-i1":{"text":"Reproduce locally","done":true},"k4-i2":{"text":"Fix email normalisation","done":false},"k4-i3":{"text":"Add regression test","done":false}},"comments":{"k4-m4":{"author":"u2","text":"Found it: we URL-decode the address twice.","at":"2026-11-11"}}},"k5":{"title":"Onboarding checklist UI","labels":["l2","l3"],"assignee":"u1","due":"2026-11-15","checklist":{"k5-i1":{"text":"Wireframe","done":true},"k5-i2":{"text":"Build component","done":true},"k5-i3":{"text":"Hook up API","done":false}}},"k6":{"title":"Rate-limit the public API","labels":["l2"],"assignee":"u3","due":"2026-11-19"},"k7":{"title":"Fix flaky date-picker test","labels":["l1","l4"],"assignee":"u1","due":"2026-11-13","comments":{"k7-m1":{"author":"u3","text":"Can you check the timezone handling too?","at":"2026-11-12"}}},"k8":{"title":"Release notes for 2.4","labels":["l4"],"assignee":"u2","due":"2026-11-07"},"k9":{"title":"Old pricing page banner","labels":["l3"],"archived":"c1"}}}}
     ]
   },
   {
     "note": "Columns matter for the move, so the agent observes them directly.",
-    "call": {"action": "observe", "path": "/columns"},
+    "call": {"action":"observe","path":"/columns"},
     "receive": [
-      {"path": "/columns", "version": 37, "node": {"path": "/columns", "api": ["add"], "*": {"path": "/columns/<column id>", "api": ["rename", "set_limit", "delete", "add_card", "archive_all"]}, "c1": {"name": "Backlog", "limit": null, "cards": ["k1", "k2", "k3"]}, "c2": {"name": "In progress", "limit": 3, "cards": ["k4", "k5", "k6"]}, "c3": {"name": "Review", "limit": 2, "cards": ["k7"]}, "c4": {"name": "Done", "limit": null, "cards": ["k8"]}}}
+      {"version":37,"node":{"api":["add"],"*":{"api":["rename","set_limit","delete","add_card","archive_all"]},"c1":{"name":"Backlog","limit":null,"cards":["k1","k2","k3"]},"c2":{"name":"In progress","limit":3,"cards":["k4","k5","k6"]},"c3":{"name":"Review","limit":2,"cards":["k7"]},"c4":{"name":"Done","limit":null,"cards":["k8"]}}}
     ]
   },
   {
     "note": "The agent reads doc/cards/_/checklist/_/set_done.md. `wait` asks for receipt and ping in one message; `version` refuses the call if the board changed since the agent looked.",
-    "call": {"action": "set_done", "path": "/cards/k4/checklist/k4-i2", "done": true, "version": 37, "wait": true},
+    "call": {"action":"set_done","path":"/cards/k4/checklist/k4-i2","done":true,"version":37,"wait":true},
     "receive": [
-      {"receipt": "s51", "path": "/cards/k4/checklist/k4-i2", "action": "set_done", "ping": {"version": 38, "changed": ["/cards/k4/checklist/k4-i2/done"], "removed": []}}
+      {"receipt":"s51","ping":{"version":38,"changed":["/cards/k4/checklist/k4-i2/done"]}}
     ]
   },
   {
     "note": "Reads doc/cards/_/move.md.",
-    "call": {"action": "move", "path": "/cards/k4", "column": "c3", "wait": true},
+    "call": {"action":"move","path":"/cards/k4","column":"c3","wait":true},
     "receive": [
-      {"receipt": "s52", "path": "/cards/k4", "action": "move", "ping": {"version": 39, "changed": ["/columns/c2/cards", "/columns/c3/cards"], "removed": []}}
+      {"receipt":"s52","ping":{"version":39,"changed":["/columns/c2/cards","/columns/c3/cards"]}}
     ]
   },
   {
     "note": "Reads doc/cards/_/comment.md. The new comment's id is in the changed path.",
-    "call": {"action": "comment", "path": "/cards/k4", "text": "Fixed and in review. Regression test still to do.", "wait": true},
+    "call": {"action":"comment","path":"/cards/k4","text":"Fixed and in review. Regression test still to do.","wait":true},
     "receive": [
-      {"receipt": "s53", "path": "/cards/k4", "action": "comment", "ping": {"version": 40, "changed": ["/cards/k4/comments/k4-m21"], "removed": []}}
+      {"receipt":"s53","ping":{"version":40,"changed":["/cards/k4/comments/k4-m21"]}}
     ]
   },
   {
     "note": "Review is now at its limit of 2. The submission still gets a receipt and a ping; the receipt carries the error and the ping shows nothing changed.",
-    "call": {"action": "move", "path": "/cards/k6", "column": "c3"},
+    "call": {"action":"move","path":"/cards/k6","column":"c3"},
     "receive": [
-      {"receipt": "s54", "path": "/cards/k6", "action": "move", "feedback": {"error": "column_full", "message": "Review is at its limit of 2 cards (k7, k4). Move a card out of Review first, or raise its limit."}, "ping": {"version": 40, "changed": [], "removed": []}}
+      {"receipt":"s54","feedback":{"error":"column_full","message":"Review is at its limit of 2 cards (k7, k4). Move a card out of Review first, or raise its limit."},"ping":{"version":40}}
     ]
   },
   {
     "note": "Priya changed something in the app herself. The agent hears it because it listens on /.",
     "receive": [
-      {"ping": "s55", "version": 41, "changed": ["/cards/k6/due"], "removed": []}
+      {"ping":"s55","version":41,"changed":["/cards/k6/due"]}
     ]
   },
   {
     "note": "It looks at the card that changed.",
-    "call": {"action": "observe", "path": "/cards/k6"},
+    "call": {"action":"observe","path":"/cards/k6"},
     "receive": [
-      {"path": "/cards/k6", "version": 41, "node": {"title": "Rate-limit the public API", "labels": ["l2"], "assignee": "u3", "due": "2026-11-21"}}
+      {"version":41,"node":{"title":"Rate-limit the public API","labels":["l2"],"assignee":"u3","due":"2026-11-21"}}
     ]
   },
   {
-    "call": {"action": "rename", "path": "/cards/k6", "title": "Rate-limit the public API (v2)", "version": 41, "wait": true},
+    "call": {"action":"rename","path":"/cards/k6","title":"Rate-limit the public API (v2)","version":41,"wait":true},
     "receive": [
-      {"receipt": "s56", "path": "/cards/k6", "action": "rename", "ping": {"version": 42, "changed": ["/cards/k6/title"], "removed": []}}
+      {"receipt":"s56","ping":{"version":42,"changed":["/cards/k6/title"]}}
     ]
   },
   {
     "note": "Task: \"Clear out Done.\" Imagine archiving is slow on this server. Without `wait`, the receipt comes back at once and lists what is now busy.",
-    "call": {"action": "archive_all", "path": "/columns/c4"},
+    "call": {"action":"archive_all","path":"/columns/c4"},
     "receive": [
-      {"receipt": "s57", "path": "/columns/c4", "action": "archive_all", "busy": ["/columns/c4", "/cards/k8"]}
+      {"receipt":"s57","busy":["/columns/c4","/cards/k8"]}
     ]
   },
   {
-    "note": "While it runs, the column has no well-defined value. Observing it gives the last one, marked busy.",
-    "call": {"action": "observe", "path": "/columns/c4"},
+    "note": "While it runs, the column has no well-defined value. Observing it gives the last one, marked busy, with progress.",
+    "call": {"action":"observe","path":"/columns/c4"},
     "receive": [
-      {"path": "/columns/c4", "version": 42, "node": {"busy": {"by": "s57", "last": {"name": "Done", "limit": null, "cards": ["k8"]}}}}
+      {"version":42,"node":{"busy":{"by":"s57","progress":{"done":0,"total":1,"message":"Archiving cards: 0 of 1"},"last":{"name":"Done","limit":null,"cards":["k8"]}}}}
     ]
   },
   {
     "note": "A submission on a busy node is refused as feedback, and its ping shows nothing changed.",
-    "call": {"action": "move", "path": "/cards/k8", "column": "c1"},
+    "call": {"action":"move","path":"/cards/k8","column":"c1"},
     "receive": [
-      {"receipt": "s58", "path": "/cards/k8", "action": "move", "feedback": {"error": "busy", "message": "/cards/k8 is busy until s57 settles. Listen for its ping, then try again."}, "ping": {"version": 42, "changed": [], "removed": []}}
+      {"receipt":"s58","feedback":{"error":"busy","message":"/cards/k8 is busy until s57 settles. Listen for its ping, then try again."},"ping":{"version":42}}
     ]
   },
   {
     "note": "The archive finishes. Its ping goes out to everyone listening, including the agent.",
     "receive": [
-      {"ping": "s57", "version": 43, "changed": ["/columns/c4/cards", "/cards/k8/archived"], "removed": []}
+      {"ping":"s57","version":43,"changed":["/columns/c4/cards","/cards/k8/archived"]}
     ]
   },
   {
     "note": "The agent checks what the archive did.",
-    "call": {"action": "observe", "path": "/", "since": 42},
+    "call": {"action":"observe","path":"/","since":42},
     "receive": [
-      {"path": "/", "version": 43, "node": {"columns": {"c4": {"cards": []}}, "cards": {"k8": {"archived": "c4"}}}, "since": 42, "removed": []}
+      {"version":43,"node":{"columns":{"c4":{"cards":[]}},"cards":{"k8":{"archived":"c4"}}}}
     ]
   },
   {
     "note": "Follow-up task: \"What is Priya working on?\" The agent reads doc/cards/find.md.",
-    "call": {"action": "find", "path": "/cards", "where": {"assignee": "u2", "archived": false}},
+    "call": {"action":"find","path":"/cards","where":{"assignee":"u2","archived":false}},
     "receive": [
-      {"path": "/cards", "version": 43, "node": {"path": "/cards", "api": ["find"], "*": {"path": "/cards/<card id>", "api": ["rename", "set_description", "set_labels", "assign", "set_due", "move", "archive", "restore", "delete", "add_checklist_item", "comment"], "defaults": {"description": "", "labels": [], "assignee": null, "due": null, "overdue": false, "checklist": {}, "comments": {}, "archived": false}, "derived": {"overdue": "due < today and the card is not in the last column"}, "checklist": {"*": {"path": "/cards/<card id>/checklist/<item id>", "api": ["set_done", "remove"]}}, "comments": {"*": {"path": "/cards/<card id>/comments/<comment id>"}}}, "k4": {"title": "Login fails with + in email", "labels": ["l1"], "assignee": "u2", "due": "2026-11-10", "overdue": true, "description": "Reported by two customers. Repro: sign up with a+b@example.com, then log in.", "checklist": {"k4-i1": {"text": "Reproduce locally", "done": true}, "k4-i2": {"text": "Fix email normalisation", "done": true}, "k4-i3": {"text": "Add regression test", "done": false}}, "comments": {"k4-m4": {"author": "u2", "text": "Found it: we URL-decode the address twice.", "at": "2026-11-11"}, "k4-m21": {"author": "u1", "text": "Fixed and in review. Regression test still to do.", "at": "2026-11-12"}}}}}
+      {"version":43,"node":{"api":["find"],"*":{"api":["rename","set_description","set_labels","assign","set_due","move","archive","restore","delete","add_checklist_item","comment"],"checklist":{"*":{"api":["set_done","remove"]}},"comments":{"*":{}}},"k4":{"title":"Login fails with + in email","labels":["l1"],"assignee":"u2","due":"2026-11-10","overdue":true,"description":"Reported by two customers. Repro: sign up with a+b@example.com, then log in.","checklist":{"k4-i1":{"text":"Reproduce locally","done":true},"k4-i2":{"text":"Fix email normalisation","done":true},"k4-i3":{"text":"Add regression test","done":false}},"comments":{"k4-m4":{"author":"u2","text":"Found it: we URL-decode the address twice.","at":"2026-11-11"},"k4-m21":{"author":"u1","text":"Fixed and in review. Regression test still to do.","at":"2026-11-12"}}}}}
     ]
   },
   {
-    "call": {"action": "assign", "path": "/cards/k1", "assignee": "u7"},
+    "call": {"action":"assign","path":"/cards/k1","assignee":"u7"},
     "receive": [
-      {"receipt": "s59", "path": "/cards/k1", "action": "assign", "feedback": {"error": "unknown_member", "message": "No member u7. Members: u1, u2, u3."}, "ping": {"version": 43, "changed": [], "removed": []}}
+      {"receipt":"s59","feedback":{"error":"unknown_member","message":"No member u7. Members: u1, u2, u3."},"ping":{"version":43}}
     ]
   },
   {
-    "note": "What a reply looks like when a list overflows. This board has 9 cards, so the cap is shown here at 3 instead of 100.",
-    "call": {"action": "observe", "path": "/cards"},
+    "note": "What an answer looks like when a collection overflows. This board has 9 cards, so the limit is shown here at 3 instead of 100.",
+    "call": {"action":"observe","path":"/cards"},
     "receive": [
-      {"path": "/cards", "version": 43, "node": {"path": "/cards", "api": ["find"], "*": {"path": "/cards/<card id>", "api": ["rename", "set_description", "set_labels", "assign", "set_due", "move", "archive", "restore", "delete", "add_checklist_item", "comment"], "defaults": {"description": "", "labels": [], "assignee": null, "due": null, "overdue": false, "checklist": {}, "comments": {}, "archived": false}, "derived": {"overdue": "due < today and the card is not in the last column"}, "checklist": {"*": {"path": "/cards/<card id>/checklist/<item id>", "api": ["set_done", "remove"]}}, "comments": {"*": {"path": "/cards/<card id>/comments/<comment id>"}}}, "k1": {"title": "Dark mode for settings page", "labels": ["l2", "l3"]}, "k2": {"title": "Upgrade build tooling", "labels": ["l4"], "assignee": "u3"}, "k3": {"title": "Export board as CSV", "labels": ["l2"], "due": "2026-11-26"}, "overflow": {"message": "Showing 3 of 9 children. Send `next` for more, or narrow it down with find (doc/cards/find.md).", "next": {"action": "page", "path": "/cards", "after": "k3"}}}}
+      {"version":43,"node":{"api":["find"],"*":{"api":["rename","set_description","set_labels","assign","set_due","move","archive","restore","delete","add_checklist_item","comment"],"checklist":{"*":{"api":["set_done","remove"]}},"comments":{"*":{}}},"k1":{"title":"Dark mode for settings page","labels":["l2","l3"]},"k2":{"title":"Upgrade build tooling","labels":["l4"],"assignee":"u3"},"k3":{"title":"Export board as CSV","labels":["l2"],"due":"2026-11-26"},"overflow":{"shown":3,"total":9,"next":{"action":"page","path":"/cards","after":"k3"}}}}
     ]
   }
 ]
